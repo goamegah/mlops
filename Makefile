@@ -11,7 +11,7 @@ SHELL        := /bin/sh
 PYTHON       := uv run python
 RUN          := uv run
 VENV_DIR     := .venv
-PYTHONPATH   ?= .
+PYTHONPATH   ?= src
 export PYTHONPATH
 API_HOST     ?= 127.0.0.1
 API_PORT     ?= 8000
@@ -101,22 +101,22 @@ doctor: check-uv check-venv ## Diagnostique l'environnement de travail
 # ==============================================================================
 
 data: ## Prepare/genere le jeu de donnees dans data/
-	$(PYTHON) -m mlproject.prepare_data
+	$(PYTHON) -m bank_marketing.prepare_data
 
 train: ## Entraine la baseline -> models/model.joblib (C=.. MAX_ITER=..)
-	$(PYTHON) -m mlproject.train --c $(C) --max-iter $(MAX_ITER)
+	$(PYTHON) -m bank_marketing.train --c $(C) --max-iter $(MAX_ITER)
 
 train-models: ## Compare RF / XGBoost / LightGBM (GridSearchCV) + SHAP (CV=.. SCORING=..)
-	# TODO (S7) : $(PYTHON) -m mlproject.train_models --cv $(CV) --scoring $(SCORING)
+	# TODO (S7) : $(PYTHON) -m bank_marketing.train_models --cv $(CV) --scoring $(SCORING)
 
 train-optuna: ## Optimise RF / XGBoost / LightGBM avec Optuna (N_TRIALS=.. CV=..)
-	# TODO (S6) : $(PYTHON) -m mlproject.train_optuna --n-trials $(N_TRIALS) --cv $(CV)
+	$(PYTHON) -m bank_marketing.train_optuna --n-trials $(N_TRIALS) --cv $(CV)
 
 mlflow: ## Demarre le serveur MLflow (docker compose)
 	docker compose -f docker-compose.yml up -d mlflow
 
 api: ## Lance l'API FastAPI en rechargement auto (voir API_HOST/API_PORT)
-	# TODO (S12) : $(RUN) uvicorn mlproject.api:app --reload --host $(API_HOST) --port $(API_PORT)
+	# TODO (S12) : $(RUN) uvicorn bank_marketing.api:app --reload --host $(API_HOST) --port $(API_PORT)
 
 frontend: ## Lance le frontend Streamlit (voir FRONTEND_PORT, API_URL)
 	# TODO (S14bis) : $(RUN) streamlit run frontend/app.py --server.port $(FRONTEND_PORT)
@@ -127,10 +127,10 @@ frontend: ## Lance le frontend Streamlit (voir FRONTEND_PORT, API_URL)
 # ==============================================================================
 
 docker-build: ## Construit l'image d'entrainement
-	# TODO (S8) : docker build -f docker/Dockerfile.train -t mlproject-train .
+	# TODO (S8) : docker build -f docker/Dockerfile.train -t bank-marketing-train .
 
 docker-run: ## Lance l'entrainement en conteneur
-	# TODO (S8) : docker run --rm -v "$(CURDIR)/models:/app/models" mlproject-train
+	# TODO (S8) : docker run --rm -v "$(CURDIR)/models:/app/models" bank-marketing-train
 
 docker-up: ## Demarre la stack (mlflow, api, frontend)
 	# TODO (S14) : docker compose -f docker-compose.yml up -d --build mlflow api frontend
@@ -144,13 +144,13 @@ docker-down: ## Arrete et supprime les conteneurs (conserve les volumes)
 # ==============================================================================
 
 lint: ## Verifie le style (ruff)
-	# TODO : $(RUN) ruff check mlproject
+	# TODO : $(RUN) ruff check src
 
 format: ## Formate le code (ruff)
-	# TODO : $(RUN) ruff format mlproject
+	# TODO : $(RUN) ruff format src
 
 type: ## Verifie les types (mypy)
-	# TODO : $(RUN) mypy mlproject
+	# TODO : $(RUN) mypy src
 
 test: ## Lance les tests (pytest)
 	# TODO : $(RUN) pytest

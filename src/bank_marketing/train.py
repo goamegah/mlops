@@ -28,13 +28,13 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 
-from mlproject.config import (
+from bank_marketing.config import (
     MLFLOW_EXPERIMENT,
     MLFLOW_TRACKING_URI,
     MODEL_DIR,
 )
-from mlproject.data import load_data, split
-from mlproject.features import build_preprocessor
+from bank_marketing.data import load_data, split
+from bank_marketing.features import build_preprocessor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

@@ -9,13 +9,13 @@ Seance 7 - TP AutoML & SHAP
 Chaque modele est suivi dans MLflow (un run par modele, imbrique sous un run
 parent ``compare-models``) et le meilleur est enregistre dans le Model
 Registry, avec une description et des tags (TODO S7-5, bonus) et un summary
-plot SHAP loggue comme artefact (`mlproject.evaluation.log_shap_summary`, deja
+plot SHAP loggue comme artefact (`bank_marketing.evaluation.log_shap_summary`, deja
 fourni).
 
 Lancement :
-    python -m mlproject.train_models
-    python -m mlproject.train_models --cv 3 --scoring roc_auc
-    python -m mlproject.train_models --no-mlflow   # desactive le suivi MLflow
+    python -m bank_marketing.train_models
+    python -m bank_marketing.train_models --cv 3 --scoring roc_auc
+    python -m bank_marketing.train_models --no-mlflow   # desactive le suivi MLflow
 """
 from __future__ import annotations
 
@@ -44,17 +44,17 @@ from sklearn.pipeline import Pipeline
 # TODO (S7-1) : importer RandomForestClassifier (sklearn.ensemble),
 #               XGBClassifier (xgboost), LGBMClassifier (lightgbm),
 #               GridSearchCV (sklearn.model_selection) et RANDOM_STATE
-#               (mlproject.config)
+#               (bank_marketing.config)
 
-from mlproject.config import (
+from bank_marketing.config import (
     MLFLOW_EXPERIMENT,
     MLFLOW_TRACKING_URI,
     MODEL_DIR,
     MODEL_NAME,
 )
-from mlproject.data import load_data, split
-from mlproject.evaluation import log_shap_summary
-from mlproject.features import build_preprocessor
+from bank_marketing.data import load_data, split
+from bank_marketing.evaluation import log_shap_summary
+from bank_marketing.features import build_preprocessor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

@@ -1,15 +1,15 @@
 # ==============================================================================
-# Projet fil rouge MLOps - manifeste de dependances (structure aplatie)
+# Projet fil rouge MLOps - manifeste de dependances (layout src/)
 # ==============================================================================
-# Le package `mlproject` n'est PAS installe comme paquet : il est rendu
-# importable via PYTHONPATH (`.` en local via le Makefile, `/app` dans Docker).
-# Ce pyproject sert donc uniquement a declarer les DEPENDANCES. C'est ce qui
-# permet a `pip install .` (Dockerfiles) de s'executer AVANT meme que le code
-# source ne soit copie, pour profiter du cache de couches Docker.
+# Le package `bank_marketing` (sous src/) n'est PAS installe comme paquet : il
+# est rendu importable via PYTHONPATH (`src` en local via le Makefile, `/app/src`
+# dans Docker). Ce pyproject sert donc uniquement a declarer les DEPENDANCES.
+# C'est ce qui permet a `pip install .` (Dockerfiles) de s'executer AVANT meme
+# que le code source ne soit copie, pour profiter du cache de couches Docker.
 # ==============================================================================
 
 [project]
-name = "mlproject"
+name = "bank-marketing"
 version = "0.1.0"
 description = "Pipeline MLOps de classification binaire (fil rouge Bank Marketing)"
 requires-python = ">=3.13"
@@ -63,7 +63,7 @@ target-version = "py313"
 python_version = "3.13"
 
 # Le stack scientifique ne fournit pas de stubs de types : on ignore les
-# imports non types pour ces librairies, tout en gardant mypy strict sur mlproject.
+# imports non types pour ces librairies, tout en gardant mypy strict sur src/.
 [[tool.mypy.overrides]]
 module = [
   "sklearn.*",

@@ -4,7 +4,7 @@ Seance 12 - TP FastAPI
     /health est fourni et fonctionne. A vous d'implementer le schema d'entree
     (adapte a VOTRE jeu de donnees), le schema de sortie, le chargement du
     modele et l'endpoint /predict (voir les TODO S12-n).
-    Lancement : `uvicorn mlproject.api:app --reload`
+    Lancement : `uvicorn bank_marketing.api:app --reload`
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 # TODO (S12-3) : importer joblib, asynccontextmanager (contextlib),
-#               AsyncIterator (typing) et MODEL_DIR (mlproject.config)
+#               AsyncIterator (typing) et MODEL_DIR (bank_marketing.config)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

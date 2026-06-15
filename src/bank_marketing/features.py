@@ -4,7 +4,7 @@ from __future__ import annotations
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from mlproject.config import CATEGORICAL_FEATURES, NUMERIC_FEATURES
+from bank_marketing.config import CATEGORICAL_FEATURES, NUMERIC_FEATURES
 
 
 def build_preprocessor() -> ColumnTransformer:

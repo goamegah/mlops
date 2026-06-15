@@ -32,7 +32,7 @@ def task_prepare_data(**context) -> None:
 
 def task_train(**context) -> None:
     # TODO (S17-2) :
-    #   - importer mlproject.train.train et l'appeler -> metrics = train()
+    #   - importer bank_marketing.train.train et l'appeler -> metrics = train()
     #   - pousser metrics["f1"] dans XCom : context["ti"].xcom_push(key="f1", value=...)
     raise NotImplementedError
 

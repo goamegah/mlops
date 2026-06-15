@@ -1,6 +1,6 @@
 # Image du frontend Streamlit (fournie : support du TP docker-compose - Seance 14).
-# Build : docker build -f docker/Dockerfile.frontend -t mlproject-frontend .
-# Run   : docker run --rm -p 8501:8501 -e API_URL=http://host.docker.internal:8000 mlproject-frontend
+# Build : docker build -f docker/Dockerfile.frontend -t bank-marketing-frontend .
+# Run   : docker run --rm -p 8501:8501 -e API_URL=http://host.docker.internal:8000 bank-marketing-frontend
 
 FROM python:3.13-slim
 ENV PYTHONUNBUFFERED=1

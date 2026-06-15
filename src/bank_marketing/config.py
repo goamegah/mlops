@@ -11,12 +11,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Structure aplatie : ce fichier est mlproject/config.py a la racine du depot,
-# donc la racine du projet est parents[1] (mlproject/ -> racine).
-ROOT = Path(__file__).resolve().parents[1]
+# Layout src/ : ce fichier est src/bank_marketing/config.py, donc la racine du
+# projet est parents[2] (bank_marketing/ -> src/ -> racine).
+ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
-# S0-1 : chemin vers le fichier de donnees genere par mlproject.prepare_data
+# S0-1 : chemin vers le fichier de donnees genere par bank_marketing.prepare_data
 DATA_PATH = ROOT / "data" / "dataset.csv"
 MODEL_DIR = ROOT / "models"
 
@@ -45,3 +45,6 @@ RANDOM_STATE = 42
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "bank-marketing-baseline")
 MODEL_NAME = os.getenv("MODEL_NAME", "bank-marketing-classifier")
+
+# Alias de modèles pour les differents stades de production (dev, staging, prod)
+MODEL_STAGES = ["dev", "staging", "prod"]

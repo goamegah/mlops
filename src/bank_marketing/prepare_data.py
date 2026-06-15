@@ -6,11 +6,11 @@ authentification), en extrait ``bank-full.csv``, mappe la cible ``y``
 seulement APRES l'appel, donc inutilisable pour predire avant d'appeler). Le
 resultat est un CSV propre, separe par des virgules, ecrit dans ``data/``.
 
-Ce module sert a la fois au ``make data``, a la baseline (``mlproject.train``
+Ce module sert a la fois au ``make data``, a la baseline (``bank_marketing.train``
 lit ``data/dataset.csv``) et au DAG Airflow de re-entrainement (Seance 17).
 
 Usage:
-    python -m mlproject.prepare_data    # depuis la racine (PYTHONPATH=.)
+    python -m bank_marketing.prepare_data    # depuis la racine (PYTHONPATH=.)
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from urllib.request import urlopen
 
 import pandas as pd
 
-from mlproject.config import DATA_PATH
+from bank_marketing.config import DATA_PATH
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

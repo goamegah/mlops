@@ -107,13 +107,13 @@ train: ## Entraine la baseline -> models/model.joblib (C=.. MAX_ITER=..)
 	$(PYTHON) -m bank_marketing.train --c $(C) --max-iter $(MAX_ITER)
 
 train-models: ## Compare RF / XGBoost / LightGBM (GridSearchCV) + SHAP (CV=.. SCORING=..)
-	# TODO (S7) : $(PYTHON) -m bank_marketing.train_models --cv $(CV) --scoring $(SCORING)
+	$(PYTHON) -m bank_marketing.train_models --cv $(CV) --scoring $(SCORING)
 
 train-optuna: ## Optimise RF / XGBoost / LightGBM avec Optuna (N_TRIALS=.. CV=..)
 	# TODO (S6) : $(PYTHON) -m bank_marketing.train_optuna --n-trials $(N_TRIALS) --cv $(CV)
 
 mlflow: ## Demarre le serveur MLflow (docker compose)
-	# TODO (S5) : docker compose -f docker-compose.yml up -d mlflow
+	docker compose -f docker-compose.yml up -d mlflow
 
 api: ## Lance l'API FastAPI en rechargement auto (voir API_HOST/API_PORT)
 	# TODO (S12) : $(RUN) uvicorn bank_marketing.api:app --reload --host $(API_HOST) --port $(API_PORT)

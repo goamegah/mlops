@@ -226,10 +226,7 @@ models/
 dags/
 docker/
 frontend/
-docker-compose.yml
 local_backup/
 # Modules de seances a venir (deja ecrits mais gardes hors git) :
-src/bank_marketing/evaluation.py
 src/bank_marketing/train_optuna.py
-src/bank_marketing/train_models.py
 src/bank_marketing/api.py

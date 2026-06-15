@@ -219,3 +219,17 @@ __marimo__/
 
 # local
 TODO.md
+
+# Gardes en LOCAL (hors git), reintroduits au bon rythme du cours.
+# Retire la ligne correspondante quand tu abordes la seance.
+models/
+dags/
+docker/
+frontend/
+docker-compose.yml
+local_backup/
+# Modules de seances a venir (deja ecrits mais gardes hors git) :
+src/bank_marketing/evaluation.py
+src/bank_marketing/train_optuna.py
+src/bank_marketing/train_models.py
+src/bank_marketing/api.py

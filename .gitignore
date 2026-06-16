@@ -228,5 +228,5 @@ docker/
 frontend/
 local_backup/
 # Modules de seances a venir (deja ecrits mais gardes hors git) :
-src/bank_marketing/train_optuna.py
 src/bank_marketing/api.py
+docker-compose.yml

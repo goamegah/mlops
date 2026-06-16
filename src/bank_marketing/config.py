@@ -66,5 +66,12 @@ def _parse_tags(raw: str) -> dict[str, str]:
 
 MLFLOW_EXPERIMENT_TAGS = _parse_tags(os.getenv("MLFLOW_EXPERIMENT_TAGS", ""))
 
+# Seuils de la porte qualite (bank_marketing.evaluate) : le modele est rejete si
+# une metrique passe sous son seuil. f1 volontairement bas car les classes sont
+# desequilibrees (~11,7% de positifs) -> au seuil de decision 0.5 le f1 tourne
+# autour de 0.33, bien en dessous d'un 0.55 generique.
+EVAL_ROC_AUC_MIN = float(os.getenv("EVAL_ROC_AUC_MIN", "0.65"))
+EVAL_F1_MIN = float(os.getenv("EVAL_F1_MIN", "0.30"))
+
 # Alias de modèles pour les differents stades de production (dev, staging, prod)
 MODEL_STAGES = ["dev", "staging", "prod"]

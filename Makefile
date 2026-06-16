@@ -34,7 +34,7 @@ RESET  := $(shell printf '\033[0m')
 
 .PHONY: help \
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
-        data train train-models train-optuna mlflow api frontend \
+        data train train-models train-optuna evaluate mlflow api frontend \
         docker-build docker-run docker-up docker-down \
         lint format type test check
 
@@ -110,7 +110,10 @@ train-models: ## Compare RF / XGBoost / LightGBM (GridSearchCV) + SHAP (CV=.. SC
 	$(PYTHON) -m bank_marketing.train_models --cv $(CV) --scoring $(SCORING)
 
 train-optuna: ## Optimise RF / XGBoost / LightGBM avec Optuna (N_TRIALS=.. CV=..)
-	# TODO (S6) : $(PYTHON) -m bank_marketing.train_optuna --n-trials $(N_TRIALS) --cv $(CV)
+	$(PYTHON) -m bank_marketing.train_optuna --n-trials $(N_TRIALS) --cv $(CV)
+
+evaluate: ## Evalue le dernier modele du registry + porte qualite (seuils EVAL_*)
+	$(PYTHON) -m bank_marketing.evaluate
 
 mlflow: ## Demarre le serveur MLflow (docker compose)
 	docker compose -f docker-compose.yml up -d mlflow

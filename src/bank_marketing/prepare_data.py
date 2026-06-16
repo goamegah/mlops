@@ -12,6 +12,7 @@ lit ``data/dataset.csv``) et au DAG Airflow de re-entrainement (Seance 17).
 Usage:
     python -m bank_marketing.prepare_data    # depuis la racine (PYTHONPATH=.)
 """
+
 from __future__ import annotations
 
 import io

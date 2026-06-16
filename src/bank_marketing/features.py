@@ -1,4 +1,5 @@
 """Construction du pre-processing."""
+
 from __future__ import annotations
 
 from sklearn.compose import ColumnTransformer

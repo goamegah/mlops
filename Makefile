@@ -39,7 +39,7 @@ RESET  := $(shell printf '\033[0m')
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
         data train train-models train-optuna evaluate mlflow api predict-client frontend \
         docker-build docker-run docker-up docker-down \
-        lint format type test check
+        lint format format-check type test check
 
 
 # ==============================================================================
@@ -153,15 +153,18 @@ docker-down: ## Arrete et supprime les conteneurs (conserve les volumes)
 # ==============================================================================
 
 lint: ## Verifie le style (ruff)
-	# TODO : $(RUN) ruff check src
+	$(RUN) --extra dev ruff check src scripts
 
 format: ## Formate le code (ruff)
-	# TODO : $(RUN) ruff format src
+	$(RUN) --extra dev ruff format src scripts
+
+format-check: ## Verifie le formatage sans modifier (utilise par le CI)
+	$(RUN) --extra dev ruff format --check src scripts
 
 type: ## Verifie les types (mypy)
-	# TODO : $(RUN) mypy src
+	$(RUN) --extra dev mypy src
 
 test: ## Lance les tests (pytest)
-	# TODO : $(RUN) pytest
+	# TODO (S10) : $(RUN) --extra dev pytest
 
-check: lint type test ## Workflow qualite complet (lint + types + tests)
+check: lint format-check type ## Workflow qualite (lint + format + types)

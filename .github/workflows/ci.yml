@@ -1,0 +1,27 @@
+name: CI
+
+# CI simple : a chaque push / pull request sur main, on verifie la qualite du
+# code (lint + formatage + types) via la cible `make check` du Makefile.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Qualite du code (lint + format + types)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du depot
+        uses: actions/checkout@v4
+
+      - name: Installer uv (+ Python 3.13)
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Verifier la qualite du code
+        run: make check

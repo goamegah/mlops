@@ -6,6 +6,7 @@ Seance 5 - TP MLflow Tracking
     La baseline fonctionne deja : `python -m bank_marketing.train` doit s'executer
     tel quel une fois config.py adapte a votre dataset (TP S0).
 """
+
 from __future__ import annotations
 
 import argparse

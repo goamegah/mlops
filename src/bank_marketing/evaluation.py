@@ -1,4 +1,5 @@
 """Outils d'evaluation partages : graphiques loggues comme artefacts MLflow."""
+
 from __future__ import annotations
 
 import logging

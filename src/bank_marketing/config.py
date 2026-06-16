@@ -4,6 +4,7 @@ C'est le SEUL fichier a adapter pour brancher votre propre jeu de donnees :
 data.py, features.py et les scripts d'entrainement lisent toutes leurs
 colonnes via ces constantes (TP S0).
 """
+
 from __future__ import annotations
 
 import os
@@ -45,6 +46,25 @@ RANDOM_STATE = 42
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "bank-marketing-baseline")
 MODEL_NAME = os.getenv("MODEL_NAME", "bank-marketing-classifier")
+
+# Metadonnees de l'experience MLflow (lues par bank_marketing.tracking pour
+# documenter l'experience dans l'UI : description + tags).
+MLFLOW_EXPERIMENT_DESCRIPTION = os.getenv(
+    "MLFLOW_EXPERIMENT_DESCRIPTION", "Bank Marketing - cours MLOps"
+)
+
+
+def _parse_tags(raw: str) -> dict[str, str]:
+    """Parser une chaine "cle=valeur,cle2=valeur2" en dictionnaire de tags."""
+    tags: dict[str, str] = {}
+    for item in raw.split(","):
+        if "=" in item:
+            key, value = item.split("=", 1)
+            tags[key.strip()] = value.strip()
+    return tags
+
+
+MLFLOW_EXPERIMENT_TAGS = _parse_tags(os.getenv("MLFLOW_EXPERIMENT_TAGS", ""))
 
 # Alias de modèles pour les differents stades de production (dev, staging, prod)
 MODEL_STAGES = ["dev", "staging", "prod"]

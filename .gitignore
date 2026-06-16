@@ -227,6 +227,5 @@ dags/
 docker/
 frontend/
 local_backup/
-# Modules de seances a venir (deja ecrits mais gardes hors git) :
-src/bank_marketing/api.py
+# Gardes hors git pour le moment (seances a venir) :
 docker-compose.yml

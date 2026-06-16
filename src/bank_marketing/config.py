@@ -47,6 +47,9 @@ MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "bank-marketing-baseline")
 MODEL_NAME = os.getenv("MODEL_NAME", "bank-marketing-classifier")
 
+# URL de l'API FastAPI (utilisee par le client de test scripts/predict_client.py)
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
 # Metadonnees de l'experience MLflow (lues par bank_marketing.tracking pour
 # documenter l'experience dans l'UI : description + tags).
 MLFLOW_EXPERIMENT_DESCRIPTION = os.getenv(

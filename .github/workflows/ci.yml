@@ -1,27 +1,85 @@
+# CI - Integration continue (adapte de la Seance 18 au projet bank_marketing).
+#
+# A chaque push / pull request sur main (ou lancement manuel) :
+#   1. quality : porte qualite (lint ruff + format + types mypy) via le Makefile.
+#   2. train   : entraine la baseline et publie models/model.joblib en artefact
+#                (Continuous Training), uniquement si quality est vert.
+#
+# pytest n'est pas encore branche : les tests viendront des seances S10/S11/S15.
 name: CI
 
-# CI simple : a chaque push / pull request sur main, on verifie la qualite du
-# code (lint + formatage + types) via la cible `make check` du Makefile.
-
+# S18-1 : push + pull request sur main, plus lancement manuel.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Annule un run en cours si on repousse sur la meme ref (economise des minutes).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permissions minimales par defaut.
+permissions:
+  contents: read
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Qualite : lint (ruff) + format (ruff) + types (mypy). Le "quality gate".
+  # ---------------------------------------------------------------------------
   quality:
-    name: Qualite du code (lint + format + types)
+    name: Qualite (lint + format + types)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout du depot
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Installer uv (+ Python 3.13)
-        uses: astral-sh/setup-uv@v5
+      - name: Installation de uv (avec cache)
+        uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
-          python-version: "3.13"
+          cache-dependency-glob: uv.lock
 
-      - name: Verifier la qualite du code
-        run: make check
+      - name: Installation des dependances (projet + dev)
+        run: uv sync --extra dev
+
+      - name: Lint (ruff)
+        run: make lint
+
+      - name: Format (ruff)
+        run: make format-check
+
+      - name: Types (mypy)
+        run: make type
+
+  # ---------------------------------------------------------------------------
+  # 2. Entrainement : entraine la baseline et publie le modele en artefact
+  #    (illustration du "Continuous Training").
+  # ---------------------------------------------------------------------------
+  train:
+    name: Entrainement (Continuous Training)
+    runs-on: ubuntu-latest
+    # S18-6 : ne s'execute QUE si le job quality est vert.
+    needs: quality
+    steps:
+      - name: Checkout du depot
+        uses: actions/checkout@v6
+
+      - name: Installation de uv (avec cache)
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Donnees + entrainement de la baseline
+        run: |
+          make data
+          make train
+
+      - name: Publication du modele en artefact
+        uses: actions/upload-artifact@v7
+        with:
+          name: model
+          path: models/model.joblib

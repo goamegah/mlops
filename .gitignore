@@ -224,8 +224,7 @@ TODO.md
 # Retire la ligne correspondante quand tu abordes la seance.
 models/
 dags/
-docker/
-frontend/
 local_backup/
-# Gardes hors git pour le moment (seances a venir) :
-docker-compose.yml
+# Frontend mis de cote pour le moment (Streamlit + son image) :
+frontend/
+docker/Dockerfile.frontend

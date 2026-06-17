@@ -1,0 +1,27 @@
+# Seance 8 - TP Docker : image de conteneurisation de l'entrainement.
+# Objectif : une image qui execute `python -m bank_marketing.train` de facon reproductible.
+# Build  : docker build -f docker/Dockerfile.train -t bank-marketing-train .
+# Run    : docker run --rm -v "$PWD/models:/app/models" bank-marketing-train
+
+FROM python:3.13-slim
+
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src
+WORKDIR /app
+
+# libgomp1 : runtime OpenMP requis par LightGBM
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependances installees AVANT le code source -> profite du cache de layers
+# quand seul le code change.
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir .
+
+# Code source (inclut le script de preparation des donnees)
+COPY src/ ./src/
+
+# Genere data/dataset.csv dans l'image (telechargement UCI au build)
+RUN python -m bank_marketing.prepare_data
+
+# Commande par defaut : entraine la baseline (ecrit models/model.joblib)
+CMD ["python", "-m", "bank_marketing.train"]

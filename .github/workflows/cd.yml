@@ -1,0 +1,67 @@
+# CD - Livraison continue (adapte de la Seance 19 au projet bank_marketing).
+#
+# Sur push de la branche main ET sur les tags de version vX.Y.Z, on construit
+# l'image Docker de l'API et on la pousse sur le registre de conteneurs de
+# GitHub (GHCR : ghcr.io), authentifie avec le GITHUB_TOKEN automatique.
+name: CD
+
+# S19-1 : push sur main + tags de version vX.Y.Z, plus lancement manuel.
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+# Pas d'annulation en cours : on ne veut pas interrompre une livraison.
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-push:
+    name: Build & push de l'image API (GHCR)
+    runs-on: ubuntu-latest
+    # S19-2 : autorise l'ecriture de packages (push sur GHCR).
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout du depot
+        uses: actions/checkout@v6
+
+      - name: Mise en place de Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Connexion a GHCR
+        # S19-3 : login GHCR avec le jeton automatique du workflow.
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calcul des tags et labels
+        id: meta
+        # S19-4 : latest (branche par defaut) + SHA du commit + version semantique.
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}/bank-marketing-api
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=semver,pattern={{version}}
+
+      - name: Build & push de l'image
+        # S19-5 : build de docker/Dockerfile.api et push sur GHCR (cache GHA).
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

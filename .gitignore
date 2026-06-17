@@ -225,6 +225,5 @@ TODO.md
 models/
 dags/
 local_backup/
-# Frontend mis de cote pour le moment (Streamlit + son image) :
-frontend/
+# Image Docker du frontend gardee de cote (service compose encore commente) :
 docker/Dockerfile.frontend

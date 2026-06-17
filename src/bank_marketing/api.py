@@ -1,9 +1,11 @@
 """API d'inference du modele de classification (FastAPI).
 
-Seance 12 - TP FastAPI
-    L'API charge le modele une seule fois au demarrage (lifespan) et expose
-    /health, /predict (inference) et /model-info. Le schema d'entree reprend
-    les colonnes du dataset Bank Marketing.
+Seance 12 - TP FastAPI (+ journal de predictions en base)
+    L'API charge le modele au demarrage (lifespan) et expose :
+      - /health, /model-info
+      - POST /predict      : inference + journalisation en base (renvoie un id)
+      - POST /feedback     : verite terrain rattachee a une prediction
+      - GET  /predictions  : journal des dernieres predictions
     Lancement : `uvicorn bank_marketing.api:app --reload`  (ou `make api`)
 """
 
@@ -20,6 +22,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from bank_marketing.config import MODEL_DIR
+from bank_marketing.db import init_db, list_predictions, save_feedback, save_prediction
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -33,6 +36,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     model_path = MODEL_DIR / "model.joblib"
     ml["model"] = joblib.load(model_path)
     logger.info("Modele charge depuis %s", model_path)
+    # Journal de predictions : best-effort, l'API demarre meme sans la base.
+    try:
+        init_db()
+        logger.info("Base de donnees prete (journal de predictions)")
+    except Exception:
+        logger.warning(
+            "Base indisponible : le journal de predictions sera desactive", exc_info=True
+        )
     yield
     ml.clear()
 
@@ -87,10 +98,18 @@ class Features(BaseModel):
 
 
 class PredictionOut(BaseModel):
-    """Resultat de prediction."""
+    """Resultat de prediction (l'id permet de rattacher un feedback)."""
 
+    id: str = Field(..., description="Identifiant de la prediction (vide si non journalisee)")
     prediction: int = Field(..., description="Classe predite : 1 = souscrit, 0 = ne souscrit pas")
     probability: float = Field(..., description="Probabilite de souscription (classe 1)")
+
+
+class FeedbackIn(BaseModel):
+    """Verite terrain pour une prediction passee."""
+
+    prediction_id: str = Field(..., description="Identifiant renvoye par /predict")
+    actual: int = Field(..., ge=0, le=1, description="Resultat reel : 1 = a souscrit, 0 = non")
 
 
 @app.get("/health")
@@ -104,8 +123,37 @@ def predict(features: Features) -> PredictionOut:
     if model is None:
         raise HTTPException(status_code=503, detail="Modele non charge")
     row = pd.DataFrame([features.model_dump()])
-    proba = float(model.predict_proba(row)[0, 1])
-    return PredictionOut(prediction=int(proba >= 0.5), probability=round(proba, 4))
+    proba = round(float(model.predict_proba(row)[0, 1]), 4)
+    pred = int(proba >= 0.5)
+    model_version = os.environ.get("MODEL_VERSION", "unknown")
+
+    # Journalisation best-effort : une base indisponible ne casse pas /predict.
+    pred_id = ""
+    try:
+        pred_id = save_prediction(features.model_dump(), pred, proba, model_version)
+    except Exception:
+        logger.warning(
+            "Echec d'enregistrement de la prediction (base indisponible ?)", exc_info=True
+        )
+
+    return PredictionOut(id=pred_id, prediction=pred, probability=proba)
+
+
+@app.post("/feedback")
+def feedback(fb: FeedbackIn) -> dict:
+    try:
+        feedback_id = save_feedback(fb.prediction_id, fb.actual)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Feedback non enregistre : {exc}") from exc
+    return {"status": "ok", "feedback_id": feedback_id}
+
+
+@app.get("/predictions")
+def predictions(limit: int = 50) -> list[dict]:
+    try:
+        return list_predictions(limit=limit)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Journal indisponible : {exc}") from exc
 
 
 @app.get("/model-info")

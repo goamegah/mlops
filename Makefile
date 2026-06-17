@@ -37,7 +37,7 @@ RESET  := $(shell printf '\033[0m')
 
 .PHONY: help \
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
-        data train train-models train-optuna evaluate mlflow api predict-client frontend \
+        data train train-models train-optuna evaluate mlflow db api predict-client frontend \
         docker-build docker-run docker-up docker-down \
         lint format format-check type test check
 
@@ -121,6 +121,9 @@ evaluate: ## Evalue le dernier modele du registry + porte qualite (seuils EVAL_*
 mlflow: ## Demarre le serveur MLflow (docker compose)
 	docker compose -f docker-compose.yml up -d mlflow
 
+db: ## Demarre MySQL (journal de predictions, requis par l'API)
+	docker compose -f docker-compose.yml up -d mysql
+
 api: ## Lance l'API FastAPI en rechargement auto (voir API_HOST/API_PORT)
 	$(RUN) uvicorn bank_marketing.api:app --reload --host $(API_HOST) --port $(API_PORT)
 
@@ -128,7 +131,7 @@ predict-client: ## Envoie des clients de test a l'API (scripts/predict_client.py
 	$(PYTHON) scripts/predict_client.py
 
 frontend: ## Lance le frontend Streamlit (voir FRONTEND_PORT, API_URL)
-	# TODO (S14bis) : $(RUN) streamlit run frontend/app.py --server.port $(FRONTEND_PORT)
+	$(RUN) streamlit run frontend/app.py --server.port $(FRONTEND_PORT)
 
 
 # ==============================================================================

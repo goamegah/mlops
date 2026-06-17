@@ -50,6 +50,11 @@ MODEL_NAME = os.getenv("MODEL_NAME", "bank-marketing-classifier")
 # URL de l'API FastAPI (utilisee par le client de test scripts/predict_client.py)
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
+# Base de donnees du journal de predictions (SQLAlchemy + MySQL via pymysql).
+# En local : MySQL expose sur 127.0.0.1:3306 (service `mysql` du docker-compose).
+# Dans Docker, l'API surcharge l'hote par le nom de service `mysql`.
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://bank:bank@127.0.0.1:3306/bankmarketing")
+
 # Metadonnees de l'experience MLflow (lues par bank_marketing.tracking pour
 # documenter l'experience dans l'UI : description + tags).
 MLFLOW_EXPERIMENT_DESCRIPTION = os.getenv(

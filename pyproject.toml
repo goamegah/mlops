@@ -40,6 +40,9 @@ dependencies = [
   "pymysql>=1.1",
   "dill>=0.3.9",
   "python-dotenv>=1.0",
+  # Fournit le shim `distutils` (retire de la stdlib en Python 3.12+),
+  # requis par certaines dependances de mlflow.evaluate.
+  "setuptools>=69",
 ]
 
 [project.optional-dependencies]

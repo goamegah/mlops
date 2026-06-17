@@ -25,6 +25,23 @@ services:
     volumes:
       - mlflow_data:/mlflow
 
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bankmarketing
+      MYSQL_USER: bank
+      MYSQL_PASSWORD: bank
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ubank", "-pbank"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   train:
     build:
       context: .
@@ -44,6 +61,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
+    # Journal de predictions : l'API joint MySQL via le nom de service `mysql`.
+    environment:
+      DATABASE_URL: mysql+pymysql://bank:bank@mysql:3306/bankmarketing
+    depends_on:
+      mysql:
+        condition: service_healthy
     # S14-1 : expose l'API sur le port 8000
     ports:
       - "8000:8000"

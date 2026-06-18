@@ -95,6 +95,26 @@ IC_FOLDER = (
     " 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z'/>"
 )
 IC_TREND = "<polyline points='22 7 13.5 15.5 8.5 10.5 2 17'/><polyline points='16 7 22 7 22 13'/>"
+IC_WALLET = (
+    "<circle cx='12' cy='11' r='8'/><path d='M7 11H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"
+    " a2 2 0 0 0-2-2h-3'/>"
+)
+IC_PHONE = (
+    "<path d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79"
+    " 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0"
+    " 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2"
+    " 2 0 0 1 22 16.92z'/>"
+)
+IC_DATABASE = (
+    "<ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3m0-7v6c0"
+    " 1.66 4 3 9 3s9-1.34 9-3V5'/><line x1='3' y1='12' x2='3' y2='19'/><line x1='21' y1='12' x2='21'"
+    " y2='19'/><ellipse cx='12' cy='19' rx='9' ry='3'/>"
+)
+IC_CHECK = "<polyline points='20 6 9 17 4 12'/>"
+IC_ALERT = (
+    "<path d='M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2"
+    " 2 0 0 0-3.42 0z'/><line x1='12' y1='9' x2='12' y2='13'/><line x1='12' y1='17' x2='12.01' y2='17'/>"
+)
 
 api_url = DEFAULT_API_URL
 
@@ -157,8 +177,8 @@ st.markdown(
       [data-testid="stSidebar"] .stButton>button:hover {
         border-color: #4F46E5; color: #4F46E5; box-shadow: 0 6px 16px rgba(79,70,229,0.12);
       }
-      .stButton>button {border-radius: 11px; font-weight: 600; transition: 0.18s;}
-      .stButton>button:hover {border-color: #4F46E5; box-shadow: 0 8px 20px rgba(79,70,229,0.12);}
+      .stButton>button {border-radius: 11px; font-weight: 600; transition: 0.18s; background-color: #4F46E5 !important; color: white !important; border: none !important;}
+      .stButton>button:hover {background-color: #4338CA !important; box-shadow: 0 8px 20px rgba(79,70,229,0.25) !important;}
 
       /* Hero */
       .hero-card {
@@ -389,6 +409,22 @@ def _quality_pill(value: str | None, good_threshold: float) -> tuple[str, str, s
     return ("À améliorer", "#FFEDD5", "#C2410C")
 
 
+def _render_info_card(title: str, description: str, icon_body: str, color: str = ACCENT) -> str:
+    """Carte info premium avec titre, description et icône."""
+    return (
+        f"<div style='background:#fff; border:1px solid #E5E7EB; border-radius:14px; "
+        f"padding:1rem; box-shadow:0 4px 12px rgba(0,0,0,0.04);'>"
+        f"<div style='display:flex; gap:0.8rem;'>"
+        f"<div style='min-width:40px; width:40px; height:40px; border-radius:10px; "
+        f"background:{color}15; display:flex; align-items:center; justify-content:center; color:{color};'>"
+        f"{_svg(icon_body, 20)}</div>"
+        f"<div style='flex:1;'>"
+        f"<div style='font-weight:600; color:#111827; font-size:0.95rem;'>{title}</div>"
+        f"<div style='font-size:0.85rem; color:#6B7280; margin-top:0.3rem;'>{description}</div>"
+        f"</div></div></div>"
+    )
+
+
 def render_home() -> None:
     # --- Hero : bandeau degrade + illustration ---
     hero_svg = (
@@ -567,8 +603,9 @@ def render_predict() -> None:
     with st.form("predict_form"):
         # Section 1 : Infos personnelles
         st.markdown(
-            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
-            "👤 Infos personnelles</div>",
+            f"<div style='margin-bottom:1.2rem;'>"
+            f"{_render_info_card('Infos personnelles', 'Données démographiques du client', IC_USER)}"
+            f"</div>",
             unsafe_allow_html=True,
         )
         col1, col2 = st.columns(2)
@@ -583,8 +620,9 @@ def render_predict() -> None:
 
         # Section 2 : Profil financier
         st.markdown(
-            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
-            "💰 Profil financier</div>",
+            f"<div style='margin-bottom:1.2rem;'>"
+            f"{_render_info_card('Profil financier', 'Situation économique du client', IC_WALLET)}"
+            f"</div>",
             unsafe_allow_html=True,
         )
         col1, col2 = st.columns(2)
@@ -599,8 +637,9 @@ def render_predict() -> None:
 
         # Section 3 : Historique & campagne
         st.markdown(
-            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
-            "📞 Historique & campagne</div>",
+            f"<div style='margin-bottom:1.2rem;'>"
+            f"{_render_info_card('Historique & campagne', 'Contacts antérieurs et contexte de l\'appel', IC_PHONE)}"
+            f"</div>",
             unsafe_allow_html=True,
         )
         col1, col2 = st.columns(2)
@@ -691,11 +730,25 @@ def render_tracking() -> None:
         return
 
     prod = next((r for r in rows if "prod" in r["alias"]), None)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Modèle en production", f"v{prod['version']}" if prod else "aucun")
-    c2.metric("ROC AUC (prod)", (prod["roc_auc"] or "-") if prod else "-")
-    c3.metric("F1-score (prod)", (prod["f1"] or "-") if prod else "-")
-    c4.metric("Versions", len(rows))
+
+    # Metrics stylisées
+    cards = ""
+    metrics = [
+        (IC_PACKAGE, "Modèle en production", f"v{prod['version']}" if prod else "—", "#4F46E5", "#EEF2FF"),
+        (IC_TREND, "ROC AUC (prod)", _fmt_metric(prod["roc_auc"] if prod else None), "#0EA5E9", "#E0F2FE"),
+        (IC_TARGET, "F1-score (prod)", _fmt_metric(prod["f1"] if prod else None), "#EA580C", "#FFF7ED"),
+        (IC_FOLDER, "Versions au registry", str(len(rows)), "#8B5CF6", "#F3E8FF"),
+    ]
+    for icon, label, value, vcolor, ibg in metrics:
+        cards += (
+            "<div class='kpi-card'><div class='kpi-head'>"
+            f"<div class='kpi-icon' style='background:{ibg}; color:{vcolor};'>{_svg(icon, 20)}</div>"
+            f"<div><div class='kpi-label'>{label}</div>"
+            f"<div class='kpi-value' style='color:{vcolor};'>{value}</div></div></div>"
+            "</div>"
+        )
+    st.markdown(f"<div class='row'>{cards}</div>", unsafe_allow_html=True)
+    st.write("")
 
     st.dataframe(pd.DataFrame(rows).replace("", "-"), width="stretch", hide_index=True)
 
@@ -741,8 +794,23 @@ def render_evaluation() -> None:
         st.info("Aucune version à évaluer. Lance un entraînement d'abord.")
         return
 
-    eval_version = st.selectbox("Version à évaluer", [r["version"] for r in eval_rows])
-    if not st.button("Lancer l'évaluation", type="primary"):
+    # Cartes d'info : seuils qualité
+    st.markdown(
+        f"<div style='margin-bottom:1.5rem;'>"
+        f"{_render_info_card('Seuils qualité', f'ROC AUC ≥ {EVAL_ROC_AUC_MIN} | F1-score ≥ {EVAL_F1_MIN}', IC_ALERT, '#EA580C')}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        eval_version = st.selectbox("Version à évaluer", [r["version"] for r in eval_rows])
+    with c2:
+        st.write("")
+        st.write("")
+        eval_btn = st.button("Lancer l'évaluation", type="primary", use_container_width=True)
+
+    if not eval_btn:
         return
 
     with st.spinner("Évaluation du modèle sur le jeu de test..."):
@@ -754,24 +822,45 @@ def render_evaluation() -> None:
             st.error(f"Évaluation impossible : {exc}")
             return
 
+    st.write("")
     metrics = result.metrics
     f1 = float(metrics["f1_score"])
     roc = float(metrics["roc_auc"])
     roc_ok = roc >= EVAL_ROC_AUC_MIN
     f1_ok = f1 >= EVAL_F1_MIN
+    prec = float(metrics.get('precision_score', float('nan')))
+    rec = float(metrics.get('recall_score', float('nan')))
 
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("ROC AUC", f"{roc:.4f}")
-    m2.metric("F1-score", f"{f1:.4f}")
-    m3.metric("Précision", f"{float(metrics.get('precision_score', float('nan'))):.4f}")
-    m4.metric("Rappel", f"{float(metrics.get('recall_score', float('nan'))):.4f}")
+    # Metrics stylisées
+    cards = ""
+    metric_list = [
+        (IC_TREND, "ROC AUC", f"{roc:.4f}", "#0EA5E9", "#E0F2FE", roc_ok),
+        (IC_TARGET, "F1-score", f"{f1:.4f}", "#EA580C", "#FFF7ED", f1_ok),
+        (IC_CHECK, "Précision", f"{prec:.4f}", "#10B981", "#ECFDF5", None),
+        (IC_ALERT, "Rappel", f"{rec:.4f}", "#8B5CF6", "#F3E8FF", None),
+    ]
+    for icon, label, value, vcolor, ibg, ok in metric_list:
+        badge = (
+            f"<span class='kpi-pill' style='background:#DCFCE7; color:#16A34A;'>✓ OK</span>"
+            if ok is True
+            else f"<span class='kpi-pill' style='background:#FFEDD5; color:#C2410C;'>✗ KO</span>"
+            if ok is False
+            else ""
+        )
+        cards += (
+            "<div class='kpi-card'><div class='kpi-head'>"
+            f"<div class='kpi-icon' style='background:{ibg}; color:{vcolor};'>{_svg(icon, 20)}</div>"
+            f"<div style='flex:1;'><div class='kpi-label'>{label}</div>"
+            f"<div class='kpi-value' style='color:{vcolor};'>{value}</div></div></div>"
+            f"<div style='margin-top:0.6rem;'>{badge}</div></div>"
+        )
+    st.markdown(f"<div class='row'>{cards}</div>", unsafe_allow_html=True)
 
-    st.write(f"- roc_auc {roc:.4f} {'>=' if roc_ok else '<'} {EVAL_ROC_AUC_MIN} -> {'OK' if roc_ok else 'KO'}")
-    st.write(f"- f1_score {f1:.4f} {'>=' if f1_ok else '<'} {EVAL_F1_MIN} -> {'OK' if f1_ok else 'KO'}")
+    st.write("")
     if roc_ok and f1_ok:
-        st.success("Porte qualité : ACCEPTÉ (les deux seuils sont atteints).")
+        st.success("✓ **Porte qualité : ACCEPTÉ** — Les deux seuils sont atteints.")
     else:
-        st.error("Porte qualité : REJETÉ (un seuil n'est pas atteint).")
+        st.error("✗ **Porte qualité : REJETÉ** — Un ou plusieurs seuils ne sont pas atteints.")
 
     images = [
         (name, art.content)
@@ -805,10 +894,23 @@ def render_history() -> None:
         st.info("Aucune prévision enregistrée. Va dans la page Prédiction pour en créer.")
         return
 
+    # Cartes d'info
+    st.markdown(
+        f"<div style='margin-bottom:1.5rem;'>"
+        f"{_render_info_card('Journal des prédictions', f'{len(journal)} prédictions enregistrées en base de données', IC_DATABASE)}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
     st.dataframe(pd.DataFrame(journal), width="stretch", hide_index=True)
 
-    st.divider()
-    st.markdown("**Enregistrer un feedback (vérité terrain)**")
+    st.write("")
+    st.markdown(
+        f"<div style='margin-bottom:1.5rem;'>"
+        f"{_render_info_card('Enregistrer un feedback', 'Marquez la vérité terrain pour améliorer le monitoring', IC_CHECK, '#10B981')}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
     options = {
         row["id"]: f"{row['id'][:8]}...  pred={row['prediction']}  p={row['probability']}"
         for row in journal

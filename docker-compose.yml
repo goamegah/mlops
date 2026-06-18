@@ -20,10 +20,11 @@ services:
       --artifacts-destination /mlflow/artifacts
       --serve-artifacts
       --allowed-hosts "*"
-    # Bind sur loopback : MLflow n'est PAS expose a l'exterieur (joignable en
-    # interne par les autres conteneurs via http://mlflow:5000).
+    # EXPOSE PUBLIQUEMENT pour la demo (le prof consulte l'UI MLflow depuis son
+    # navigateur). ATTENTION : MLflow n'a AUCUNE authentification -> a re-securiser
+    # apres la demo en remettant "127.0.0.1:5000:5000" (loopback + tunnel SSH).
     ports:
-      - "127.0.0.1:5000:5000"
+      - "5000:5000"
     volumes:
       - mlflow_data:/mlflow
 
@@ -92,6 +93,13 @@ services:
     environment:
       API_URL: http://api:8000
       MLFLOW_TRACKING_URI: http://mlflow:5000
+      # URLs publiques (navigateur) pour les liens cliquables du dashboard.
+      # A definir dans .env sur la VM, ex. MLFLOW_UI_URL=http://88.96.57.10:5000
+      # API_PUBLIC_URL=http://88.96.57.10:8000. Vides -> liens masques (local).
+      MLFLOW_UI_URL: ${MLFLOW_UI_URL:-}
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-}
+      AIRFLOW_UI_URL: ${AIRFLOW_UI_URL:-}
+      GITHUB_URL: ${GITHUB_URL:-https://github.com/goamegah/mlops}
     # S14-5 : seul le frontend est expose a l'exterieur (point d'entree public).
     ports:
       - "8501:8501"
@@ -113,10 +121,11 @@ services:
       # data/ et models/ sous /opt/airflow (volume airflow_home, accessible en ecriture).
       PYTHONPATH: /opt/airflow/src
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    # UI ordonnanceur sur loopback uniquement (comme mlflow/mysql) : on y accede
-    # par tunnel SSH `-L 8080:127.0.0.1:8080`, rien n'est expose sur Internet.
+    # EXPOSE pour la demo : l'UI Airflow est protegee par login (user admin +
+    # mot de passe genere), l'exposition est donc acceptable. Ouvrir le port 8080
+    # (OCI Security List + iptables). Re-securisable en "127.0.0.1:8080:8080".
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     volumes:
       - airflow_home:/opt/airflow      # persiste SQLite (runs + user admin), logs, data/, models/
       - ./dags:/opt/airflow/dags       # le DAG (modifiable a chaud)

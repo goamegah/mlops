@@ -30,6 +30,17 @@ st.set_page_config(page_title="Bank Marketing", page_icon="🏦", layout="wide")
 
 DEFAULT_API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000")
 
+# URLs publiques (navigateur) pour les liens cliquables - distinctes des URLs
+# internes Docker (http://api:8000, http://mlflow:5000) qui ne servent qu'aux
+# appels serveur. Definies via .env sur la VM ; vides en local -> liens masques.
+MLFLOW_UI_URL = os.environ.get("MLFLOW_UI_URL", "").rstrip("/")
+API_PUBLIC_URL = os.environ.get("API_PUBLIC_URL", "").rstrip("/")
+AIRFLOW_UI_URL = os.environ.get("AIRFLOW_UI_URL", "").rstrip("/")
+
+# Lien vers le code source (valeur par defaut : le depot du projet) et auteur.
+GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/goamegah/mlops")
+AUTHOR = "Godwin Amegah"
+
 # Valeurs possibles des variables categorielles (dataset Bank Marketing).
 CATEGORIES = {
     "job": [
@@ -101,13 +112,25 @@ def _load_registry_rows() -> list[dict]:
     return rows
 
 
-# --- Barre laterale : branding, URL de l'API, etat de la stack ---
+# --- Barre laterale : branding, liens externes, etat de la stack ---
 with st.sidebar:
     st.title("🏦 Bank Marketing")
     st.caption("Demonstrateur MLOps - souscription a un depot a terme")
     api_url = st.text_input("URL de l'API", value=DEFAULT_API_URL)
+
     st.divider()
-    st.subheader("Etat de la stack")
+    st.subheader("🔗 Liens")
+    st.link_button("🐙 Code source (GitHub)", GITHUB_URL, width="stretch")
+    if API_PUBLIC_URL:
+        st.link_button("📘 API — Swagger", f"{API_PUBLIC_URL}/docs", width="stretch")
+        st.link_button("📕 API — ReDoc", f"{API_PUBLIC_URL}/redoc", width="stretch")
+    if MLFLOW_UI_URL:
+        st.link_button("📊 MLflow — Registry", MLFLOW_UI_URL, width="stretch")
+    if AIRFLOW_UI_URL:
+        st.link_button("🌀 Airflow — Orchestration", AIRFLOW_UI_URL, width="stretch")
+
+    st.divider()
+    st.subheader("⚙️ Etat de la stack")
     for label, ok in [
         ("API", _ping(f"{api_url}/health")),
         ("MLflow", _ping(f"{MLFLOW_TRACKING_URI}/health")),
@@ -115,10 +138,39 @@ with st.sidebar:
     ]:
         st.write(f"{'🟢' if ok else '🔴'} {label}")
 
-st.title("Souscription a un depot a terme")
+    st.divider()
+    st.caption(f"Réalisé par **{AUTHOR}**")
+    st.caption("ESGI · IABD — Fil rouge MLOps")
+
+st.title("🏦 Bank Marketing — Souscription à un dépôt à terme")
+
+intro_col, author_col = st.columns([3, 1], gap="medium")
+with intro_col:
+    with st.container(border=True):
+        st.markdown("#### 🎯 Problématique")
+        st.markdown(
+            "Une banque mène des campagnes de **marketing téléphonique** pour placer des "
+            "**dépôts à terme**. L'enjeu : prédire, *avant* de contacter un client, s'il va "
+            "**souscrire** — afin de cibler les prospects les plus prometteurs et réduire le "
+            "coût des campagnes."
+        )
+        st.markdown(
+            "**Données** : UCI *Bank Marketing* (~45 000 contacts, 16 variables, classes "
+            "déséquilibrées ≈ 12 % de souscriptions). **Tâche** : classification binaire "
+            "— cible `y` (souscrit / ne souscrit pas)."
+        )
+with author_col:
+    with st.container(border=True):
+        st.markdown("#### 👤 Auteur")
+        st.markdown(f"**{AUTHOR}**")
+        st.caption("ESGI · IABD")
+        st.caption("Fil rouge MLOps")
+        st.link_button("🐙 GitHub ↗", GITHUB_URL, width="stretch")
+
+st.write("")  # respiration verticale
 
 predict_tab, tracking_tab, eval_tab, history_tab = st.tabs(
-    ["Prediction", "Suivi du modele", "Evaluation", "Table previsions"]
+    ["🎯 Prediction", "📊 Suivi du modele", "✅ Evaluation", "🗂️ Table previsions"]
 )
 
 with predict_tab:
@@ -201,11 +253,8 @@ with tracking_tab:
         f"Tracking URI (interne au reseau Docker) : `{MLFLOW_TRACKING_URI}`  |  "
         f"Modele : `{MODEL_NAME}`"
     )
-    st.caption(
-        "L'UI MLflow n'est pas exposee sur Internet (bind loopback). "
-        "Pour l'ouvrir depuis ton poste : tunnel SSH "
-        "`ssh -L 5000:127.0.0.1:5000 <user>@<vm>` puis http://localhost:5000."
-    )
+    if MLFLOW_UI_URL:
+        st.link_button("Ouvrir le Model Registry dans MLflow ↗", f"{MLFLOW_UI_URL}/#/models")
 
     try:
         rows = _load_registry_rows()

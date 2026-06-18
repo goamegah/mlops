@@ -180,6 +180,15 @@ with predict_tab:
             st.caption(f"Prediction enregistree en base — id : `{prediction.get('id', '')}`")
             st.toast("Prediction effectuee", icon="✅")
 
+            with st.expander("Detail de la requete (payload envoye / reponse brute)"):
+                rq_col, rp_col = st.columns(2)
+                with rq_col:
+                    st.markdown("**Payload envoye** (`POST /predict`)")
+                    st.json(payload)
+                with rp_col:
+                    st.markdown("**Reponse brute de l'API**")
+                    st.json(prediction)
+
 with tracking_tab:
     st.subheader("Model Registry MLflow")
     st.caption(f"Tracking URI : {MLFLOW_TRACKING_URI}  |  Modele : {MODEL_NAME}")

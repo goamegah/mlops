@@ -38,7 +38,7 @@ RESET  := $(shell printf '\033[0m')
 .PHONY: help \
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
         data train train-models train-optuna evaluate mlflow db api predict-client frontend \
-        docker-build docker-run docker-up docker-down \
+        docker-build docker-run docker-up docker-down workflow-docker \
         lint format format-check type test check
 
 
@@ -149,6 +149,12 @@ docker-up: ## Demarre la stack (mlflow, api)
 
 docker-down: ## Arrete et supprime les conteneurs (conserve les volumes)
 	docker compose -f docker-compose.yml down
+
+workflow-docker: ## Stack complete : mlflow + mysql -> train -> api + frontend
+	docker compose -f docker-compose.yml up -d mlflow mysql
+	docker compose -f docker-compose.yml --profile train run --rm train
+	docker compose -f docker-compose.yml up -d --build api frontend
+	@echo "$(GREEN)[OK] Stack prete : frontend http://<IP>:8501 | API http://<IP>:8000/docs$(RESET)"
 
 
 # ==============================================================================

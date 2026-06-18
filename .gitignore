@@ -225,5 +225,5 @@ TODO.md
 models/
 dags/
 local_backup/
-# Image Docker du frontend gardee de cote (service compose encore commente) :
-docker/Dockerfile.frontend
+DEPLOY.md
+DEPLOIEMENT_VPS.md

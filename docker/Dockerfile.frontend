@@ -1,0 +1,27 @@
+# Image du frontend Streamlit (dashboard MLOps).
+# Le frontend importe le package `bank_marketing` (config + evaluate) : l'image
+# embarque donc `src/` et genere le dataset (utilise par l'onglet Evaluation).
+# Build : docker build -f docker/Dockerfile.frontend -t bank-marketing-frontend .
+
+FROM python:3.13-slim
+
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src
+WORKDIR /app
+
+# libgomp1 : runtime OpenMP requis pour deserialiser un modele LightGBM (eval).
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependances installees AVANT le code (cache de layers).
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir .
+
+# Package + application.
+COPY src/ ./src/
+COPY frontend/ ./frontend/
+
+# Genere data/dataset.csv (necessaire a l'onglet Evaluation qui charge le jeu de test).
+RUN python -m bank_marketing.prepare_data
+
+EXPOSE 8501
+CMD ["streamlit", "run", "frontend/app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]

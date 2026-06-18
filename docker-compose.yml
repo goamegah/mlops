@@ -20,8 +20,10 @@ services:
       --artifacts-destination /mlflow/artifacts
       --serve-artifacts
       --allowed-hosts "*"
+    # Bind sur loopback : MLflow n'est PAS expose a l'exterieur (joignable en
+    # interne par les autres conteneurs via http://mlflow:5000).
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - mlflow_data:/mlflow
 
@@ -32,8 +34,9 @@ services:
       MYSQL_DATABASE: bankmarketing
       MYSQL_USER: bank
       MYSQL_PASSWORD: bank
+    # Bind sur loopback : la base n'est JAMAIS exposee a l'exterieur (securite).
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -64,6 +67,7 @@ services:
     # Journal de predictions : l'API joint MySQL via le nom de service `mysql`.
     environment:
       DATABASE_URL: mysql+pymysql://bank:bank@mysql:3306/bankmarketing
+      MODEL_VERSION: "1"
     depends_on:
       mysql:
         condition: service_healthy
@@ -80,18 +84,23 @@ services:
       timeout: 5s
       retries: 10
 
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile.frontend
-  #   # TODO (S14-4) : definir API_URL=http://api:8000 (resolution DNS interne par
-    #               le nom de service `api`) dans environment
-    # TODO (S14-5) : exposer le port 8501 (mapping "8501:8501")
-    # TODO (S14-6) : attendre que l'API soit saine avant de demarrer :
-    #   depends_on:
-    #     api:
-    #       condition: service_healthy
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    # S14-4 : l'API et MLflow sont joignables par leur nom de service (reseau interne).
+    environment:
+      API_URL: http://api:8000
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    # S14-5 : seul le frontend est expose a l'exterieur (point d'entree public).
+    ports:
+      - "8501:8501"
+    # S14-6 : attendre que l'API soit saine avant de demarrer.
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   mlflow_data:
   models_data:
+  mysql_data:

@@ -77,11 +77,17 @@ st.markdown(
     """
     <style>
       #MainMenu, footer {visibility: hidden;}
-      .block-container {padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1280px;}
-      [data-testid="stSidebar"] {background-color: #FAFAFC; border-right: 1px solid #EEF0F4;}
+      .stApp {background-color: #F7F8FB;}
+      .block-container {padding-top: 2rem; padding-bottom: 3rem; max-width: 1280px;}
+      [data-testid="stSidebar"] {background-color: #FFFFFF; border-right: 1px solid #EEF0F4;}
       [data-testid="stSidebar"] .stButton>button,
       [data-testid="stSidebar"] .stLinkButton>a {
         border-radius: 10px; font-size: 0.85rem; justify-content: flex-start;
+      }
+      /* Cartes blanches surelevees (st.container(border=True)) */
+      [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #FFFFFF; border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(16,24,40,0.04); border-color: #EEF0F4 !important;
       }
       h1, h2, h3, h4 {letter-spacing: -0.01em;}
       .stButton>button, .stLinkButton>a {border-radius: 10px;}
@@ -141,13 +147,47 @@ def _load_registry_rows() -> list[dict]:
 
 
 def render_home() -> None:
-    st.markdown("## Plateforme MLOps — Bank Marketing")
-    st.caption(
-        "De la donnée brute à la prédiction servie en production — "
-        "un pipeline complet, suivi et orchestré."
+    # --- Hero : bandeau degrade ---
+    st.markdown(
+        f"""
+        <div style="background: linear-gradient(135deg, {ACCENT} 0%, #7C3AED 100%);
+                    border-radius:18px; padding:2.1rem 2.3rem; color:white; margin-bottom:1.5rem;
+                    box-shadow:0 10px 28px rgba(79,70,229,0.28);">
+          <div style="font-size:1.95rem; font-weight:800; line-height:1.15;">
+            Plateforme MLOps — Bank Marketing
+          </div>
+          <div style="opacity:0.92; margin-top:0.5rem; font-size:1.02rem; max-width:780px;">
+            De la donnée brute à la prédiction servie en production — un pipeline complet,
+            suivi, évalué et orchestré.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    st.write("")
 
+    # --- Rangee de KPI (depuis le registry, best-effort) ---
+    try:
+        rows = _load_registry_rows()
+    except Exception:  # noqa: BLE001 - MLflow injoignable
+        rows = []
+    prod = next((r for r in rows if "prod" in r["alias"]), None)
+    kpis = [
+        ("🚀", "Modèle en production", f"v{prod['version']}" if prod else "—", ACCENT),
+        ("🗂️", "Versions au registry", str(len(rows)), "#0EA5E9"),
+        ("📈", "ROC AUC (prod)", (prod["roc_auc"] if prod and prod.get("roc_auc") else "—"), "#16A34A"),
+        ("🎯", "F1-score (prod)", (prod["f1"] if prod and prod.get("f1") else "—"), "#F59E0B"),
+    ]
+    for col, (icon, label, value, color) in zip(st.columns(4), kpis):
+        col.markdown(
+            f"<div style='background:white; border:1px solid #EEF0F4; border-radius:14px;"
+            f" padding:1rem 1.2rem; box-shadow:0 1px 3px rgba(16,24,40,0.04);'>"
+            f"<div style='font-size:0.78rem; color:#6B7280;'>{icon} {label}</div>"
+            f"<div style='font-size:1.6rem; font-weight:700; color:{color};"
+            f" margin-top:0.2rem;'>{value}</div></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
     c1, c2 = st.columns([2, 1], gap="large")
     with c1:
         with st.container(border=True):
@@ -181,13 +221,16 @@ def render_home() -> None:
         ("🖥️", "Dashboard", "Streamlit"),
         ("🌀", "Orchestration", "Airflow"),
     ]
-    for col, (icon, title, sub) in zip(st.columns(len(steps)), steps):
+    for step, (col, (icon, title, sub)) in enumerate(zip(st.columns(len(steps)), steps), start=1):
         with col, st.container(border=True):
             st.markdown(
-                f"<div style='text-align:center; padding:0.3rem 0;'>"
-                f"<div style='font-size:1.7rem;'>{icon}</div>"
-                f"<div style='font-weight:600; margin-top:0.25rem;'>{title}</div>"
-                f"<div style='color:#9CA3AF; font-size:0.72rem; margin-top:0.15rem;'>{sub}</div>"
+                f"<div style='text-align:center; padding:0.2rem 0;'>"
+                f"<div style='display:inline-block; background:#EEF2FF; color:{ACCENT};"
+                f" font-weight:700; font-size:0.7rem; border-radius:999px;"
+                f" padding:0.05rem 0.55rem;'>{step}</div>"
+                f"<div style='font-size:1.7rem; margin-top:0.3rem;'>{icon}</div>"
+                f"<div style='font-weight:600; margin-top:0.2rem;'>{title}</div>"
+                f"<div style='color:#9CA3AF; font-size:0.72rem; margin-top:0.1rem;'>{sub}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )

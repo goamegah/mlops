@@ -197,7 +197,15 @@ with predict_tab:
 
 with tracking_tab:
     st.subheader("Model Registry MLflow")
-    st.caption(f"Tracking URI : {MLFLOW_TRACKING_URI}  |  Modele : {MODEL_NAME}")
+    st.caption(
+        f"Tracking URI (interne au reseau Docker) : `{MLFLOW_TRACKING_URI}`  |  "
+        f"Modele : `{MODEL_NAME}`"
+    )
+    st.caption(
+        "L'UI MLflow n'est pas exposee sur Internet (bind loopback). "
+        "Pour l'ouvrir depuis ton poste : tunnel SSH "
+        "`ssh -L 5000:127.0.0.1:5000 <user>@<vm>` puis http://localhost:5000."
+    )
 
     try:
         rows = _load_registry_rows()

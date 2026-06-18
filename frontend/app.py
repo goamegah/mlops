@@ -15,6 +15,7 @@ import os
 import httpx
 import pandas as pd
 import streamlit as st
+from mlflow.exceptions import RestException
 from mlflow.tracking import MlflowClient
 
 from bank_marketing.config import (
@@ -73,8 +74,13 @@ def _load_registry_rows() -> list[dict]:
     on les recupere via get_registered_model puis on les rattache a chaque version.
     """
     client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+    try:
+        registered = client.get_registered_model(MODEL_NAME)
+    except RestException:
+        # MLflow est joignable mais aucun modele n'est encore enregistre.
+        return []
     aliases_by_version: dict[int, list[str]] = {}
-    for alias, version in dict(client.get_registered_model(MODEL_NAME).aliases).items():
+    for alias, version in dict(registered.aliases).items():
         aliases_by_version.setdefault(int(version), []).append(alias)
 
     rows = []

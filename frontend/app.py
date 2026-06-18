@@ -186,6 +186,9 @@ st.markdown(
       /* Selectbox premium */
       [data-testid="stSelectbox"] label {font-weight: 600 !important; color: #25263A !important; font-size: 0.95rem !important;}
 
+      /* Form buttons sticky */
+      form [data-testid="stFormSubmitButton"] {position: sticky; bottom: 0; background: white; padding: 1rem 0 !important; margin-top: 2rem !important; border-top: 1px solid #E5E7EB; box-shadow: 0 -4px 12px rgba(0,0,0,0.08);}
+
       /* Hero */
       .hero-card {
         position: relative; overflow: hidden;
@@ -359,15 +362,17 @@ def _render_page_header(title: str, description: str, icon_body: str) -> None:
     """Affiche un header premium & cohérent pour chaque page du menu."""
     html = (
         f"<div style='background:linear-gradient(135deg, #F7F8FF 0%, #EEF2FF 100%); "
-        f"border:1px solid #E5E7EB; border-radius:18px; padding:2rem 2.2rem; margin-bottom:2rem;'>"
+        f"border:1px solid #E5E7EB; border-radius:18px; padding:2rem 2.2rem; margin:0 0 2.5rem 0; "
+        f"box-shadow:0 4px 16px rgba(79,70,229,0.08);'>"
         f"<div style='display:flex; align-items:flex-start; gap:1.2rem;'>"
         f"<div style='min-width:56px; width:56px; height:56px; border-radius:14px; "
         f"background:#fff; border:1.5px solid #E5E7EB; display:flex; align-items:center; "
-        f"justify-content:center; color:{ACCENT};'>{_svg(icon_body, 26)}</div>"
+        f"justify-content:center; color:{ACCENT}; box-shadow:0 2px 8px rgba(79,70,229,0.12);'>"
+        f"{_svg(icon_body, 26)}</div>"
         f"<div style='flex:1;'>"
-        f"<div style='font-size:1.35rem; font-weight:700; color:#25263A; line-height:1.25;'>"
+        f"<div style='font-size:1.4rem; font-weight:700; color:#25263A; line-height:1.2; letter-spacing:-0.01em;'>"
         f"{title}</div>"
-        f"<div style='color:#6B7280; font-size:0.95rem; margin-top:0.5rem; line-height:1.5;'>"
+        f"<div style='color:#6B7280; font-size:0.95rem; margin-top:0.6rem; line-height:1.5;'>"
         f"{description}</div></div></div>"
     )
     st.markdown(html, unsafe_allow_html=True)

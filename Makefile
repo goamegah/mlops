@@ -38,7 +38,7 @@ RESET  := $(shell printf '\033[0m')
 .PHONY: help \
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
         data train train-models train-optuna evaluate mlflow db api predict-client frontend \
-        docker-build docker-run docker-up docker-down workflow-docker \
+        docker-build docker-run docker-up docker-down workflow-docker airflow \
         lint format format-check type test check
 
 
@@ -155,6 +155,11 @@ workflow-docker: ## Stack complete : mlflow + mysql -> train -> api + frontend
 	docker compose -f docker-compose.yml --profile train run --rm train
 	docker compose -f docker-compose.yml up -d --build api frontend
 	@echo "$(GREEN)[OK] Stack prete : frontend http://<IP>:8501 | API http://<IP>:8000/docs$(RESET)"
+
+airflow: ## Demarre Airflow standalone (DAG de re-entrainement S17) - UI sur 127.0.0.1:8080
+	docker compose -f docker-compose.yml up -d --build airflow
+	@echo "$(GREEN)[OK] Airflow demarre. UI : tunnel SSH -L 8080:127.0.0.1:8080 puis http://localhost:8080$(RESET)"
+	@echo "$(YELLOW)Mot de passe admin :$(RESET) docker compose exec airflow cat /opt/airflow/standalone_admin_password.txt"
 
 
 # ==============================================================================

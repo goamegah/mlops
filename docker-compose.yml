@@ -100,7 +100,30 @@ services:
       api:
         condition: service_healthy
 
+  # Seance 17 - Airflow : DAG de re-entrainement planifie (prepare -> train -> qualite).
+  # Mode `standalone` (scheduler + UI + SQLite en un process) : suffisant pour la demo.
+  airflow:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.airflow
+    command: standalone
+    environment:
+      # src/ sur le PYTHONPATH -> le DAG importe `bank_marketing`. Comme src est
+      # monte en /opt/airflow/src, config.ROOT vaut /opt/airflow et le DAG ecrit
+      # data/ et models/ sous /opt/airflow (volume airflow_home, accessible en ecriture).
+      PYTHONPATH: /opt/airflow/src
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    # UI ordonnanceur sur loopback uniquement (comme mlflow/mysql) : on y accede
+    # par tunnel SSH `-L 8080:127.0.0.1:8080`, rien n'est expose sur Internet.
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - airflow_home:/opt/airflow      # persiste SQLite (runs + user admin), logs, data/, models/
+      - ./dags:/opt/airflow/dags       # le DAG (modifiable a chaud)
+      - ./src:/opt/airflow/src         # le package bank_marketing
+
 volumes:
   mlflow_data:
   models_data:
   mysql_data:
+  airflow_home:

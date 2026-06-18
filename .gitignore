@@ -223,7 +223,6 @@ TODO.md
 # Gardes en LOCAL (hors git), reintroduits au bon rythme du cours.
 # Retire la ligne correspondante quand tu abordes la seance.
 models/
-dags/
 local_backup/
 DEPLOY.md
 DEPLOIEMENT_VPS.md

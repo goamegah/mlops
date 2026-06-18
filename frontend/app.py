@@ -180,6 +180,12 @@ st.markdown(
       .stButton>button {border-radius: 11px; font-weight: 600; transition: 0.18s; background-color: #4F46E5 !important; color: white !important; border: none !important;}
       .stButton>button:hover {background-color: #4338CA !important; box-shadow: 0 8px 20px rgba(79,70,229,0.25) !important;}
 
+      /* Dividers premium */
+      hr {border: none !important; border-top: 1px solid #E5E7EB !important; margin: 1.5rem 0 !important;}
+
+      /* Selectbox premium */
+      [data-testid="stSelectbox"] label {font-weight: 600 !important; color: #25263A !important; font-size: 0.95rem !important;}
+
       /* Hero */
       .hero-card {
         position: relative; overflow: hidden;
@@ -365,35 +371,6 @@ def _render_page_header(title: str, description: str, icon_body: str) -> None:
         f"{description}</div></div></div>"
     )
     st.markdown(html, unsafe_allow_html=True)
-    _accessible_links_card()
-    st.write("")  # respiration
-
-
-def _accessible_links_card() -> None:
-    """Cartes d'accès aux services externes (MLflow, Airflow, Swagger)."""
-    links = []
-    if MLFLOW_UI_URL:
-        links.append(("📊 MLflow Registry", MLFLOW_UI_URL, "Suivi des modèles et versions"))
-    if AIRFLOW_UI_URL:
-        links.append(("🌀 Airflow Orchestration", AIRFLOW_UI_URL, "Orchestration des pipelines"))
-    if API_PUBLIC_URL:
-        links.append(("📘 API Swagger", f"{API_PUBLIC_URL}/docs", "Documentation interactive de l'API"))
-
-    if links:
-        st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
-        st.markdown("**🔗 Accès rapide aux services**")
-        cols = st.columns(len(links))
-        for col, (title, url, desc) in zip(cols, links):
-            with col:
-                st.markdown(
-                    f"<div style='background:#F7F8FB; border:1px solid #EEF0F4; border-radius:12px;"
-                    f" padding:0.9rem; box-shadow:0 2px 8px rgba(0,0,0,0.04);'>"
-                    f"<a href='{url}' target='_blank' style='text-decoration:none;'>"
-                    f"<div style='font-weight:600; color:#2D3042; margin-bottom:0.3rem;'>{title}</div>"
-                    f"<div style='font-size:0.8rem; color:#6B7280;'>{desc}</div>"
-                    f"</a></div>",
-                    unsafe_allow_html=True,
-                )
 
 
 def _quality_pill(value: str | None, good_threshold: float) -> tuple[str, str, str]:
@@ -422,6 +399,17 @@ def _render_info_card(title: str, description: str, icon_body: str, color: str =
         f"<div style='font-weight:600; color:#111827; font-size:0.95rem;'>{title}</div>"
         f"<div style='font-size:0.85rem; color:#6B7280; margin-top:0.3rem;'>{description}</div>"
         f"</div></div></div>"
+    )
+
+
+def _section_title(title: str, icon_body: str, color: str = ACCENT) -> str:
+    """Titre de section premium avec icône."""
+    return (
+        f"<div style='display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem; "
+        f"margin-top:2rem;'>"
+        f"<span style='color:{color};'>{_svg(icon_body, 22)}</span>"
+        f"<div style='font-weight:700; font-size:1.1rem; color:#25263A;'>{title}</div>"
+        f"</div>"
     )
 
 
@@ -748,33 +736,46 @@ def render_tracking() -> None:
             "</div>"
         )
     st.markdown(f"<div class='row'>{cards}</div>", unsafe_allow_html=True)
-    st.write("")
 
+    st.markdown(
+        f"<div style='margin:2rem 0 1.5rem 0;'>"
+        f"<div style='font-size:0.85rem; font-weight:600; letter-spacing:0.05em; color:#8A8FA3; text-transform:uppercase;'>"
+        f"Historique des versions</div></div>",
+        unsafe_allow_html=True,
+    )
     st.dataframe(pd.DataFrame(rows).replace("", "-"), width="stretch", hide_index=True)
 
-    st.divider()
-    st.markdown("**Promouvoir une version (alias)**")
-    pc1, pc2 = st.columns(2)
-    sel_version = pc1.selectbox("Version", [r["version"] for r in rows])
-    sel_alias = pc2.selectbox("Alias", ["prod", "staging", "dev"])
-    if st.button("Assigner l'alias", type="primary"):
-        MlflowClient(tracking_uri=MLFLOW_TRACKING_URI).set_registered_model_alias(
-            MODEL_NAME, sel_alias, str(sel_version)
-        )
-        st.toast(f"Alias '{sel_alias}' -> v{sel_version}", icon="✅")
-        st.rerun()
+    st.markdown(_section_title("Promouvoir une version", IC_BRANCH, ACCENT), unsafe_allow_html=True)
+    pc1, pc2, pc3 = st.columns([2, 2, 1])
+    with pc1:
+        sel_version = st.selectbox("Version", [r["version"] for r in rows], key="promote_version")
+    with pc2:
+        sel_alias = st.selectbox("Alias", ["prod", "staging", "dev"], key="promote_alias")
+    with pc3:
+        st.write("")
+        st.write("")
+        if st.button("✓ Assigner", type="primary", use_container_width=True):
+            MlflowClient(tracking_uri=MLFLOW_TRACKING_URI).set_registered_model_alias(
+                MODEL_NAME, sel_alias, str(sel_version)
+            )
+            st.toast(f"Alias '{sel_alias}' → v{sel_version}", icon="✅")
+            st.rerun()
 
     existing_aliases = sorted({a.strip() for r in rows for a in r["alias"].split(",") if a.strip()})
     if existing_aliases:
-        st.divider()
-        st.markdown("**Retirer un alias**")
-        del_alias = st.selectbox("Alias à retirer", existing_aliases)
-        if st.button("Retirer l'alias"):
-            MlflowClient(tracking_uri=MLFLOW_TRACKING_URI).delete_registered_model_alias(
-                MODEL_NAME, del_alias
-            )
-            st.toast(f"Alias '{del_alias}' retiré", icon="🗑️")
-            st.rerun()
+        st.markdown(_section_title("Retirer un alias", IC_ALERT, "#EA580C"), unsafe_allow_html=True)
+        dc1, dc2 = st.columns([3, 1])
+        with dc1:
+            del_alias = st.selectbox("Alias à retirer", existing_aliases, key="delete_alias")
+        with dc2:
+            st.write("")
+            st.write("")
+            if st.button("✗ Retirer", use_container_width=True):
+                MlflowClient(tracking_uri=MLFLOW_TRACKING_URI).delete_registered_model_alias(
+                    MODEL_NAME, del_alias
+                )
+                st.toast(f"Alias '{del_alias}' retiré", icon="🗑️")
+                st.rerun()
 
 
 def render_evaluation() -> None:
@@ -894,45 +895,49 @@ def render_history() -> None:
         st.info("Aucune prévision enregistrée. Va dans la page Prédiction pour en créer.")
         return
 
-    # Cartes d'info
     st.markdown(
-        f"<div style='margin-bottom:1.5rem;'>"
-        f"{_render_info_card('Journal des prédictions', f'{len(journal)} prédictions enregistrées en base de données', IC_DATABASE)}"
-        f"</div>",
+        f"<div style='margin:1.5rem 0 1rem 0;'>"
+        f"<div style='font-size:0.85rem; font-weight:600; letter-spacing:0.05em; color:#8A8FA3; text-transform:uppercase;'>"
+        f"Historique complet</div></div>",
         unsafe_allow_html=True,
     )
-
     st.dataframe(pd.DataFrame(journal), width="stretch", hide_index=True)
 
-    st.write("")
+    st.markdown(_section_title("Enregistrer un feedback", IC_CHECK, "#10B981"), unsafe_allow_html=True)
     st.markdown(
-        f"<div style='margin-bottom:1.5rem;'>"
-        f"{_render_info_card('Enregistrer un feedback', 'Marquez la vérité terrain pour améliorer le monitoring', IC_CHECK, '#10B981')}"
+        f"<div style='margin-bottom:1.2rem;'>"
+        f"{_render_info_card('Vérité terrain', 'Annotez les résultats réels pour améliorer la détection des dérives', IC_DATABASE, '#10B981')}"
         f"</div>",
         unsafe_allow_html=True,
     )
+
     options = {
         row["id"]: f"{row['id'][:8]}...  pred={row['prediction']}  p={row['probability']}"
         for row in journal
     }
-    fc1, fc2, fc3 = st.columns([2, 1, 1])
-    fb_id = fc1.selectbox("Prédiction à annoter", list(options), format_func=options.get)
-    fb_actual = fc2.selectbox(
-        "Résultat réel", [1, 0], format_func=lambda x: "Souscrit (1)" if x == 1 else "Non (0)"
-    )
-    if fc3.button("Envoyer le feedback", width="stretch"):
-        try:
-            r = httpx.post(
-                f"{api_url}/feedback",
-                json={"prediction_id": fb_id, "actual": fb_actual},
-                timeout=10.0,
-            )
-            r.raise_for_status()
-        except httpx.HTTPError as exc:
-            st.error(f"Feedback impossible : {exc}")
-        else:
-            st.toast("Feedback enregistré", icon="✅")
-            st.rerun()
+    fc1, fc2, fc3 = st.columns([2.5, 1.5, 1])
+    with fc1:
+        fb_id = st.selectbox("Prédiction à annoter", list(options), format_func=options.get)
+    with fc2:
+        fb_actual = st.selectbox(
+            "Résultat réel", [1, 0], format_func=lambda x: "Souscrit (1)" if x == 1 else "Non (0)"
+        )
+    with fc3:
+        st.write("")
+        st.write("")
+        if st.button("Envoyer", type="primary", use_container_width=True):
+            try:
+                r = httpx.post(
+                    f"{api_url}/feedback",
+                    json={"prediction_id": fb_id, "actual": fb_actual},
+                    timeout=10.0,
+                )
+                r.raise_for_status()
+            except httpx.HTTPError as exc:
+                st.error(f"Feedback impossible : {exc}")
+            else:
+                st.toast("Feedback enregistré", icon="✅")
+                st.rerun()
 
 
 # ==============================================================================

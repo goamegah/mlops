@@ -42,9 +42,67 @@ API_PUBLIC_URL = os.environ.get("API_PUBLIC_URL", "").rstrip("/")
 AIRFLOW_UI_URL = os.environ.get("AIRFLOW_UI_URL", "").rstrip("/")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/goamegah/mlops")
 AUTHOR = "Godwin Amegah"
+INITIALS = "".join(part[0] for part in AUTHOR.split()[:2]).upper()
 ACCENT = "#4F46E5"
 
+# Logo GitHub officiel (Octocat) en SVG inline ; `currentColor` -> suit la couleur du texte.
+GITHUB_SVG = (
+    "<svg width='15' height='15' viewBox='0 0 16 16' fill='currentColor'"
+    " style='vertical-align:-2px;'><path d='M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53"
+    " 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09"
+    "-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87"
+    " 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2"
+    "-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04"
+    " 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65"
+    " 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0"
+    " 0016 8c0-4.42-3.58-8-8-8z'/></svg>"
+)
+
+
+def _svg(body: str, size: int = 18, sw: float = 1.9) -> str:
+    """Icone au trait (style Lucide) ; `currentColor` -> suit la couleur du parent."""
+    return (
+        f"<svg width='{size}' height='{size}' viewBox='0 0 24 24' fill='none'"
+        f" stroke='currentColor' stroke-width='{sw}' stroke-linecap='round'"
+        f" stroke-linejoin='round' style='vertical-align:-3px;'>{body}</svg>"
+    )
+
+
+# Corps de chemins (icones sobres, monochromes) reutilises dans tout le dashboard.
+IC_ROCKET = (
+    "<path d='M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0"
+    " 0 0-2.91-.09z'/><path d='m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72"
+    "-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z'/><path d='M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5"
+    " 0'/><path d='M15 9c0 .55 3.03.55 4 2 1.08 1.62 0 5 0 5'/>"
+)
+IC_TARGET = (
+    "<circle cx='12' cy='12' r='10'/><circle cx='12' cy='12' r='6'/>"
+    "<circle cx='12' cy='12' r='2'/>"
+)
+IC_USER = "<path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/>"
+IC_BRANCH = (
+    "<line x1='6' y1='3' x2='6' y2='15'/><circle cx='18' cy='6' r='3'/>"
+    "<circle cx='6' cy='18' r='3'/><path d='M18 9a9 9 0 0 1-9 9'/>"
+)
+IC_SHIELD = "<path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/><path d='m9 12 2 2 4-4'/>"
+IC_PACKAGE = (
+    "<path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1"
+    " 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/>"
+    "<polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' y1='22.08' x2='12' y2='12'/>"
+)
+IC_FOLDER = (
+    "<path d='M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0"
+    " 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z'/>"
+)
+IC_TREND = "<polyline points='22 7 13.5 15.5 8.5 10.5 2 17'/><polyline points='16 7 22 7 22 13'/>"
+
 api_url = DEFAULT_API_URL
+
+# MLflow : echouer vite si le serveur de tracking est injoignable, au lieu de
+# la tempete de retries par defaut (7 essais + backoff) qui fige l'UI quand
+# MLflow est down (ex. en local ou lors d'un hoquet reseau).
+os.environ.setdefault("MLFLOW_HTTP_REQUEST_MAX_RETRIES", "1")
+os.environ.setdefault("MLFLOW_HTTP_REQUEST_TIMEOUT", "3")
 
 # Valeurs possibles des variables categorielles (dataset Bank Marketing).
 CATEGORIES = {
@@ -72,25 +130,143 @@ CATEGORIES = {
     "poutcome": ["unknown", "failure", "other", "success"],
 }
 
-# --- CSS global : rendu moderne (epure, coins arrondis, accent indigo) ---
+# --- CSS global : design system a classes (cartes, hover, hierarchie) ---
 st.markdown(
     """
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap');
+      html, body, [class*="css"], [data-testid="stMarkdownContainer"] {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
       #MainMenu, footer {visibility: hidden;}
-      .stApp {background-color: #F7F8FB;}
-      .block-container {padding-top: 2rem; padding-bottom: 3rem; max-width: 1280px;}
-      [data-testid="stSidebar"] {background-color: #FFFFFF; border-right: 1px solid #EEF0F4;}
-      [data-testid="stSidebar"] .stButton>button,
-      [data-testid="stSidebar"] .stLinkButton>a {
+      .stApp {background: linear-gradient(180deg, #F7F8FF 0%, #F3F5FB 100%);}
+      .block-container {padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1280px; padding-left: 1.5rem; padding-right: 1.5rem;}
+      h1, h2, h3, h4 {letter-spacing: -0.02em; color: #25263A;}
+
+      /* Sidebar */
+      [data-testid="stSidebar"] {background: #FFFFFF; border-right: 1px solid #EEF0F6;}
+      .nav-link.active {
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%) !important;
+        box-shadow: 0 4px 12px rgba(79,70,229,0.35);
+      }
+      [data-testid="stSidebar"] .stLinkButton>a, [data-testid="stSidebar"] .stButton>button {
         border-radius: 10px; font-size: 0.85rem; justify-content: flex-start;
+        border: 1px solid #E5E7EB; transition: 0.18s;
       }
-      /* Cartes blanches surelevees (st.container(border=True)) */
-      [data-testid="stVerticalBlockBorderWrapper"] {
-        background: #FFFFFF; border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(16,24,40,0.04); border-color: #EEF0F4 !important;
+      [data-testid="stSidebar"] .stLinkButton>a:hover,
+      [data-testid="stSidebar"] .stButton>button:hover {
+        border-color: #4F46E5; color: #4F46E5; box-shadow: 0 6px 16px rgba(79,70,229,0.12);
       }
-      h1, h2, h3, h4 {letter-spacing: -0.01em;}
-      .stButton>button, .stLinkButton>a {border-radius: 10px;}
+      .stButton>button {border-radius: 11px; font-weight: 600; transition: 0.18s;}
+      .stButton>button:hover {border-color: #4F46E5; box-shadow: 0 8px 20px rgba(79,70,229,0.12);}
+
+      /* Hero */
+      .hero-card {
+        position: relative; overflow: hidden;
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        border-radius: 24px; padding: 2.8rem 2.8rem; color: #fff; margin-bottom: 2rem;
+        box-shadow: 0 8px 16px rgba(79,70,229,0.12), 0 24px 56px rgba(79,70,229,0.20);
+        min-height: 165px;
+      }
+      .hero-badge {
+        min-width: 56px; width: 56px; height: 56px; border-radius: 15px;
+        background: rgba(255,255,255,0.18); display: flex; align-items: center;
+        justify-content: center; font-size: 1.7rem;
+      }
+      .hero-title {font-size: 1.95rem; font-weight: 800; line-height: 1.12;}
+      .hero-subtitle {opacity: 0.92; margin-top: 0.45rem; font-size: 1rem; line-height: 1.55;}
+
+      /* Rangees flex */
+      .row {display: flex; gap: 16px; margin-bottom: 18px;}
+      .row-stretch {display: flex; gap: 18px; align-items: stretch; margin-bottom: 8px;}
+
+      /* KPI */
+      .kpi-card {
+        flex: 1; background: #fff; border: 1px solid #EDF0F7; border-radius: 18px;
+        padding: 1.1rem 1.2rem; box-shadow: 0 10px 26px rgba(31,41,55,0.06);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .kpi-card:hover {transform: translateY(-3px); box-shadow: 0 18px 36px rgba(31,41,55,0.11);}
+      .kpi-head {display: flex; align-items: center; gap: 0.8rem;}
+      .kpi-icon {
+        min-width: 46px; width: 46px; height: 46px; border-radius: 13px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+      }
+      .kpi-label {font-size: 0.74rem; color: #8A8FA3; font-weight: 600;}
+      .kpi-value {font-size: 1.6rem; font-weight: 800; line-height: 1.1;}
+      .kpi-pill {font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.65rem; border-radius: 999px;}
+
+      /* Sections */
+      .section-card {
+        background: #fff; border: 1px solid #E8EBF3; border-radius: 18px;
+        padding: 1.4rem 1.6rem; box-shadow: 0 10px 26px rgba(31,41,55,0.05);
+      }
+      .section-title {
+        font-size: 1.1rem; font-weight: 700; color: #2D3042; margin-bottom: 0.8rem;
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .section-text {color: #4B5063; font-size: 0.92rem; line-height: 1.65;}
+      /* Titre de bloc hors carte (pipeline, services) */
+      .block-title {
+        font-size: 1.15rem; font-weight: 700; color: #25263A;
+        margin: 1.6rem 0 0.9rem 0; display: flex; align-items: center; gap: 0.5rem;
+      }
+
+      /* Pipeline */
+      .pipeline-card {
+        flex: 1; background: #fff; border: 1px solid #E8EBF3; border-radius: 18px;
+        padding: 1rem 0.5rem; text-align: center; box-shadow: 0 8px 22px rgba(31,41,55,0.05);
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+      .pipeline-card:hover {
+        transform: translateY(-4px); border-color: #C7D2FE;
+        box-shadow: 0 18px 34px rgba(79,70,229,0.13);
+      }
+      .pipeline-index {
+        width: 26px; height: 26px; margin: 0 auto; border-radius: 999px; background: #EEF2FF;
+        color: #4F46E5; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.72rem;
+      }
+      .pipeline-icon {font-size: 1.7rem; margin-top: 0.35rem;}
+      .pipeline-title {font-weight: 600; margin-top: 0.2rem; font-size: 0.9rem; color: #303244;}
+      .pipeline-sub {color: #A0A5B8; font-size: 0.7rem; margin-top: 0.1rem;}
+      .pipeline-conn {width: 30px; align-self: center; border-top: 2px dashed #C7D2FE;}
+
+      /* Services */
+      .service-card {
+        flex: 1; border-radius: 16px; padding: 0.9rem 1.1rem;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .service-name {font-weight: 700; color: #1F2937;}
+      .service-status {font-size: 0.76rem; font-weight: 600; margin-top: 0.1rem;}
+      .status-dot {height: 9px; width: 9px; border-radius: 999px; display: inline-block; margin-right: 8px;}
+
+      /* Auteur */
+      .author-avatar {
+        min-width: 56px; width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, #4F46E5, #7C3AED); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;
+      }
+      .author-btn {
+        margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        background: #F7F8FB; border: 1px solid #EEF0F4; border-radius: 10px; padding: 0.6rem;
+        color: #374151 !important; text-decoration: none !important;
+        font-size: 0.85rem; font-weight: 600; transition: 0.18s;
+      }
+      .author-btn:hover {
+        border-color: #4F46E5; color: #4F46E5 !important; box-shadow: 0 6px 16px rgba(79,70,229,0.12);
+      }
+      /* Lien GitHub de la sidebar (HTML custom pour porter le logo Octocat) */
+      .sb-link {
+        display: flex; align-items: center; gap: 0.5rem; width: 100%; box-sizing: border-box;
+        background: #fff; border: 1px solid #E5E7EB; border-radius: 10px;
+        padding: 0.45rem 0.75rem; margin-bottom: 0.5rem;
+        color: #374151 !important; text-decoration: none !important;
+        font-size: 0.85rem; font-weight: 600; transition: 0.18s;
+      }
+      .sb-link:hover {
+        border-color: #4F46E5; color: #4F46E5 !important; box-shadow: 0 6px 16px rgba(79,70,229,0.12);
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -146,73 +322,183 @@ def _load_registry_rows() -> list[dict]:
 # ==============================================================================
 
 
+def _fmt_metric(value: str | None) -> str:
+    try:
+        return f"{float(value):.4f}"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _render_page_header(title: str, description: str, icon_body: str) -> None:
+    """Affiche un header premium & cohérent pour chaque page du menu."""
+    html = (
+        f"<div style='background:linear-gradient(135deg, #F7F8FF 0%, #EEF2FF 100%); "
+        f"border:1px solid #E5E7EB; border-radius:18px; padding:2rem 2.2rem; margin-bottom:2rem;'>"
+        f"<div style='display:flex; align-items:flex-start; gap:1.2rem;'>"
+        f"<div style='min-width:56px; width:56px; height:56px; border-radius:14px; "
+        f"background:#fff; border:1.5px solid #E5E7EB; display:flex; align-items:center; "
+        f"justify-content:center; color:{ACCENT};'>{_svg(icon_body, 26)}</div>"
+        f"<div style='flex:1;'>"
+        f"<div style='font-size:1.35rem; font-weight:700; color:#25263A; line-height:1.25;'>"
+        f"{title}</div>"
+        f"<div style='color:#6B7280; font-size:0.95rem; margin-top:0.5rem; line-height:1.5;'>"
+        f"{description}</div></div></div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)
+    _accessible_links_card()
+    st.write("")  # respiration
+
+
+def _accessible_links_card() -> None:
+    """Cartes d'accès aux services externes (MLflow, Airflow, Swagger)."""
+    links = []
+    if MLFLOW_UI_URL:
+        links.append(("📊 MLflow Registry", MLFLOW_UI_URL, "Suivi des modèles et versions"))
+    if AIRFLOW_UI_URL:
+        links.append(("🌀 Airflow Orchestration", AIRFLOW_UI_URL, "Orchestration des pipelines"))
+    if API_PUBLIC_URL:
+        links.append(("📘 API Swagger", f"{API_PUBLIC_URL}/docs", "Documentation interactive de l'API"))
+
+    if links:
+        st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
+        st.markdown("**🔗 Accès rapide aux services**")
+        cols = st.columns(len(links))
+        for col, (title, url, desc) in zip(cols, links):
+            with col:
+                st.markdown(
+                    f"<div style='background:#F7F8FB; border:1px solid #EEF0F4; border-radius:12px;"
+                    f" padding:0.9rem; box-shadow:0 2px 8px rgba(0,0,0,0.04);'>"
+                    f"<a href='{url}' target='_blank' style='text-decoration:none;'>"
+                    f"<div style='font-weight:600; color:#2D3042; margin-bottom:0.3rem;'>{title}</div>"
+                    f"<div style='font-size:0.8rem; color:#6B7280;'>{desc}</div>"
+                    f"</a></div>",
+                    unsafe_allow_html=True,
+                )
+
+
+def _quality_pill(value: str | None, good_threshold: float) -> tuple[str, str, str]:
+    """(texte, fond, couleur) d'une pastille de qualite selon un seuil."""
+    try:
+        x = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return ("—", "#F3F4F6", "#6B7280")
+    if x >= good_threshold:
+        return ("Bon", "#DCFCE7", "#16A34A")
+    if x >= good_threshold - 0.15:
+        return ("Moyen", "#FEF3C7", "#B45309")
+    return ("À améliorer", "#FFEDD5", "#C2410C")
+
+
 def render_home() -> None:
-    # --- Hero : bandeau degrade ---
+    # --- Hero : bandeau degrade + illustration ---
+    hero_svg = (
+        "<svg width='245' height='145' viewBox='0 0 245 145' fill='none'>"
+        # ecran / dashboard (plus visible)
+        "<rect x='6' y='16' width='160' height='110' rx='14' fill='rgba(255,255,255,0.18)'"
+        " stroke='rgba(255,255,255,0.50)' stroke-width='1.5'/>"
+        "<rect x='24' y='76' width='16' height='34' rx='3' fill='rgba(255,255,255,0.75)'/>"
+        "<rect x='48' y='58' width='16' height='52' rx='3' fill='rgba(255,255,255,0.95)'/>"
+        "<rect x='72' y='44' width='16' height='66' rx='3' fill='rgba(255,255,255,0.75)'/>"
+        # donut (plus visible)
+        "<circle cx='128' cy='68' r='22' fill='none' stroke='rgba(255,255,255,0.40)'"
+        " stroke-width='8.5'/>"
+        "<circle cx='128' cy='68' r='22' fill='none' stroke='rgba(255,255,255,1.0)'"
+        " stroke-width='8.5' stroke-dasharray='80 68' stroke-linecap='round'"
+        " transform='rotate(-90 128 68)'/>"
+        # base de donnees a anneaux (plus visible)
+        "<ellipse cx='210' cy='48' rx='26' ry='10' fill='rgba(255,255,255,0.75)'/>"
+        "<path d='M184 48 v52 a26 10 0 0 0 52 0 v-52' fill='rgba(255,255,255,0.22)'"
+        " stroke='rgba(255,255,255,0.55)' stroke-width='1.5'/>"
+        "<ellipse cx='210' cy='73' rx='26' ry='10' fill='none' stroke='rgba(255,255,255,0.55)'"
+        " stroke-width='1.5'/>"
+        "<ellipse cx='210' cy='98' rx='26' ry='10' fill='none' stroke='rgba(255,255,255,0.55)'"
+        " stroke-width='1.5'/>"
+        "</svg>"
+    )
     st.markdown(
-        f"""
-        <div style="background: linear-gradient(135deg, {ACCENT} 0%, #7C3AED 100%);
-                    border-radius:18px; padding:2.1rem 2.3rem; color:white; margin-bottom:1.5rem;
-                    box-shadow:0 10px 28px rgba(79,70,229,0.28);">
-          <div style="font-size:1.95rem; font-weight:800; line-height:1.15;">
-            Plateforme MLOps — Bank Marketing
-          </div>
-          <div style="opacity:0.92; margin-top:0.5rem; font-size:1.02rem; max-width:780px;">
-            De la donnée brute à la prédiction servie en production — un pipeline complet,
-            suivi, évalué et orchestré.
-          </div>
-        </div>
-        """,
+        f"<div class='hero-card'>"
+        f"<div style='display:flex; align-items:center; gap:1.1rem; max-width:72%;'>"
+        f"<div class='hero-badge'>{_svg(IC_ROCKET, 26)}</div>"
+        f"<div><div class='hero-title'>Plateforme MLOps — Bank Marketing</div>"
+        f"<div class='hero-subtitle'>De la donnée brute à la prédiction servie en production"
+        f" — un pipeline complet, suivi, évalué et orchestré.</div></div></div>"
+        f"<div style='position:absolute; right:26px; top:50%; transform:translateY(-50%);"
+        f" opacity:0.9;'>{hero_svg}</div></div>",
         unsafe_allow_html=True,
     )
 
-    # --- Rangee de KPI (depuis le registry, best-effort) ---
-    try:
-        rows = _load_registry_rows()
-    except Exception:  # noqa: BLE001 - MLflow injoignable
-        rows = []
+    # --- KPI (depuis le registry, best-effort ; on ne tente pas si MLflow est down) ---
+    rows: list[dict] = []
+    if _ping(f"{MLFLOW_TRACKING_URI}/health"):
+        try:
+            rows = _load_registry_rows()
+        except Exception:  # noqa: BLE001 - MLflow injoignable / registry vide
+            rows = []
     prod = next((r for r in rows if "prod" in r["alias"]), None)
+    prod_pill = ("Actif", "#EEF2FF", "#4F46E5") if prod else ("Inactif", "#F3F4F6", "#6B7280")
     kpis = [
-        ("🚀", "Modèle en production", f"v{prod['version']}" if prod else "—", ACCENT),
-        ("🗂️", "Versions au registry", str(len(rows)), "#0EA5E9"),
-        ("📈", "ROC AUC (prod)", (prod["roc_auc"] if prod and prod.get("roc_auc") else "—"), "#16A34A"),
-        ("🎯", "F1-score (prod)", (prod["f1"] if prod and prod.get("f1") else "—"), "#F59E0B"),
+        (IC_PACKAGE, "Modèle en production", f"v{prod['version']}" if prod else "—", "#4F46E5",
+         "#EEF2FF", prod_pill),
+        (IC_FOLDER, "Versions au registry", str(len(rows)), "#0EA5E9", "#E0F2FE",
+         ("Registry", "#E0F2FE", "#0369A1")),
+        (IC_TREND, "ROC AUC (prod)", _fmt_metric(prod["roc_auc"] if prod else None), "#16A34A",
+         "#ECFDF5", _quality_pill(prod["roc_auc"] if prod else None, 0.75)),
+        (IC_TARGET, "F1-score (prod)", _fmt_metric(prod["f1"] if prod else None), "#EA580C",
+         "#FFF7ED", _quality_pill(prod["f1"] if prod else None, 0.50)),
     ]
-    for col, (icon, label, value, color) in zip(st.columns(4), kpis):
-        col.markdown(
-            f"<div style='background:white; border:1px solid #EEF0F4; border-radius:14px;"
-            f" padding:1rem 1.2rem; box-shadow:0 1px 3px rgba(16,24,40,0.04);'>"
-            f"<div style='font-size:0.78rem; color:#6B7280;'>{icon} {label}</div>"
-            f"<div style='font-size:1.6rem; font-weight:700; color:{color};"
-            f" margin-top:0.2rem;'>{value}</div></div>",
-            unsafe_allow_html=True,
+    cards = ""
+    for icon, label, value, vcolor, ibg, (ptext, pbg, pfg) in kpis:
+        cards += (
+            "<div class='kpi-card'><div class='kpi-head'>"
+            f"<div class='kpi-icon' style='background:{ibg}; color:{vcolor};'>{_svg(icon, 22)}</div>"
+            f"<div><div class='kpi-label'>{label}</div>"
+            f"<div class='kpi-value' style='color:{vcolor};'>{value}</div></div></div>"
+            f"<div style='margin-top:0.75rem;'>"
+            f"<span class='kpi-pill' style='background:{pbg}; color:{pfg};'>{ptext}</span>"
+            "</div></div>"
         )
+    st.markdown(f"<div class='row'>{cards}</div>", unsafe_allow_html=True)
 
-    st.write("")
-    c1, c2 = st.columns([2, 1], gap="large")
-    with c1:
-        with st.container(border=True):
-            st.markdown("#### 🎯 Problématique")
-            st.markdown(
-                "Une banque mène des campagnes de **marketing téléphonique** pour placer des "
-                "**dépôts à terme**. L'enjeu : prédire, *avant* l'appel, si un client va "
-                "**souscrire** — afin de cibler les prospects les plus prometteurs et réduire "
-                "le coût des campagnes."
-            )
-            st.markdown(
-                "**Données** : UCI *Bank Marketing* — ~45 000 contacts, 16 variables, classes "
-                "**déséquilibrées** (≈ 12 % de souscriptions). **Tâche** : classification "
-                "binaire sur la cible `y` (souscrit / ne souscrit pas)."
-            )
-    with c2:
-        with st.container(border=True):
-            st.markdown("#### 👤 Auteur")
-            st.markdown(f"### {AUTHOR}")
-            st.caption("ESGI · IABD — Fil rouge MLOps")
-            st.write("")
-            st.link_button("🐙 Voir le code sur GitHub", GITHUB_URL, width="stretch")
+    # --- Problematique + Auteur (cartes a hauteur egale) ---
+    probleme = (
+        "<div class='section-card' style='flex:2;'>"
+        f"<div class='section-title'><span style='color:{ACCENT}; display:flex;'>"
+        f"{_svg(IC_TARGET)}</span> Problématique</div>"
+        "<div class='section-text'>"
+        "Une banque mène des campagnes de <b>marketing téléphonique</b> pour placer des "
+        "<b>dépôts à terme</b>. L'enjeu : prédire, <i>avant</i> l'appel, si un client va "
+        "<b>souscrire</b> — afin de cibler les prospects les plus prometteurs et réduire le "
+        "coût des campagnes.</div>"
+        "<hr style='border:none; border-top:1px solid #F0F1F4; margin:0.9rem 0;'>"
+        "<div class='section-text'>"
+        "<b>Données</b> : UCI <i>Bank Marketing</i> — ~45 000 contacts, 16 variables, classes "
+        "<b>déséquilibrées</b> (≈ 12 % de souscriptions).<br>"
+        "<b>Tâche</b> : classification binaire sur la cible "
+        "<code style='background:#F3F4F6; padding:0.05rem 0.3rem; border-radius:5px;'>y</code> "
+        "(souscrit / ne souscrit pas).</div></div>"
+    )
+    auteur = (
+        "<div class='section-card' style='flex:1; display:flex; flex-direction:column;'>"
+        f"<div class='section-title'><span style='color:{ACCENT}; display:flex;'>"
+        f"{_svg(IC_USER)}</span> Auteur</div>"
+        "<div style='display:flex; align-items:center; gap:0.9rem;'>"
+        f"<div class='author-avatar'>{INITIALS}</div>"
+        f"<div><div style='font-weight:700; font-size:1.05rem; color:#111827;'>{AUTHOR}</div>"
+        "<div style='color:#6B7280; font-size:0.8rem;'>ESGI · IABD</div>"
+        "<div style='color:#9CA3AF; font-size:0.8rem;'>Fil rouge MLOps</div></div></div>"
+        "<div style='margin-top:auto;'>"
+        "<hr style='border:none; border-top:1px solid #F0F1F4; margin:1rem 0 0.9rem 0;'>"
+        f"<a class='author-btn' style='margin-top:0;' href='{GITHUB_URL}' target='_blank'>"
+        f"{GITHUB_SVG} Voir le code sur GitHub</a></div></div>"
+    )
+    st.markdown(f"<div class='row-stretch'>{probleme}{auteur}</div>", unsafe_allow_html=True)
 
-    st.write("")
-    st.markdown("#### 🧭 Le pipeline de bout en bout")
+    # --- Pipeline (cartes reliees par des pointilles) ---
+    st.markdown(
+        f"<div class='block-title'><span style='color:{ACCENT}; display:flex;'>"
+        f"{_svg(IC_BRANCH, 20)}</span> Le pipeline de bout en bout</div>",
+        unsafe_allow_html=True,
+    )
     steps = [
         ("📥", "Données", "UCI Bank Marketing"),
         ("🧠", "Entraînement", "sklearn · XGBoost · LightGBM"),
@@ -221,64 +507,114 @@ def render_home() -> None:
         ("🖥️", "Dashboard", "Streamlit"),
         ("🌀", "Orchestration", "Airflow"),
     ]
-    for step, (col, (icon, title, sub)) in enumerate(zip(st.columns(len(steps)), steps), start=1):
-        with col, st.container(border=True):
-            st.markdown(
-                f"<div style='text-align:center; padding:0.2rem 0;'>"
-                f"<div style='display:inline-block; background:#EEF2FF; color:{ACCENT};"
-                f" font-weight:700; font-size:0.7rem; border-radius:999px;"
-                f" padding:0.05rem 0.55rem;'>{step}</div>"
-                f"<div style='font-size:1.7rem; margin-top:0.3rem;'>{icon}</div>"
-                f"<div style='font-weight:600; margin-top:0.2rem;'>{title}</div>"
-                f"<div style='color:#9CA3AF; font-size:0.72rem; margin-top:0.1rem;'>{sub}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
+    pipe = ""
+    for step, (icon, title, sub) in enumerate(steps, start=1):
+        if step > 1:
+            pipe += "<div class='pipeline-conn'></div>"
+        pipe += (
+            "<div class='pipeline-card'>"
+            f"<div class='pipeline-index'>{step}</div>"
+            f"<div class='pipeline-icon'>{icon}</div>"
+            f"<div class='pipeline-title'>{title}</div>"
+            f"<div class='pipeline-sub'>{sub}</div></div>"
+        )
+    st.markdown(
+        f"<div style='display:flex; align-items:stretch; margin-bottom:8px;'>{pipe}</div>",
+        unsafe_allow_html=True,
+    )
 
-    st.write("")
-    st.markdown("#### ⚙️ État des services")
+    # --- Etat des services ---
+    st.markdown(
+        f"<div class='block-title'><span style='color:{ACCENT}; display:flex;'>"
+        f"{_svg(IC_SHIELD, 20)}</span> État des services</div>",
+        unsafe_allow_html=True,
+    )
     statuses = [
         ("API", _ping(f"{api_url}/health")),
         ("MLflow", _ping(f"{MLFLOW_TRACKING_URI}/health")),
         ("Base de données", _ping(f"{api_url}/predictions?limit=1")),
     ]
-    for col, (label, ok) in zip(st.columns(len(statuses)), statuses):
+    scards = ""
+    for label, ok in statuses:
         bg = "#ECFDF5" if ok else "#FEF2F2"
-        fg = "#059669" if ok else "#DC2626"
-        state = "en ligne" if ok else "hors ligne"
-        col.markdown(
-            f"<div style='background:{bg}; border-radius:12px; padding:0.8rem 1rem;'>"
-            f"<span style='color:{fg};'>●</span> <b>{label}</b>"
-            f"<div style='color:#6B7280; font-size:0.78rem; margin-top:0.1rem;'>{state}</div>"
-            f"</div>",
-            unsafe_allow_html=True,
+        bd = "#BBF7D0" if ok else "#FECACA"
+        fg = "#16A34A" if ok else "#DC2626"
+        state = "En ligne" if ok else "Hors ligne"
+        pulse = (
+            f"<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='{fg}'"
+            " stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
+            "<path d='M3 12h4l2 5 4-10 2 5h4'/></svg>"
         )
+        scards += (
+            f"<div class='service-card' style='background:{bg}; border:1px solid {bd};'>"
+            f"<div><span class='status-dot' style='background:{fg};'></span>"
+            f"<span class='service-name'>{label}</span>"
+            f"<div class='service-status' style='color:{fg};'>{state}</div></div>{pulse}</div>"
+        )
+    st.markdown(
+        f"<div class='row' style='margin-bottom:0;'>{scards}</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_predict() -> None:
-    st.markdown("## 🎯 Prédiction")
-    st.caption("Renseigne le profil d'un client et interroge l'endpoint `POST /predict`.")
+    _render_page_header(
+        title="Prédiction — Tester l'endpoint",
+        description="Renseigne le profil d'un client et teste l'endpoint `POST /predict` en temps réel.",
+        icon_body=IC_TARGET,
+    )
 
     with st.form("predict_form"):
+        # Section 1 : Infos personnelles
+        st.markdown(
+            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
+            "👤 Infos personnelles</div>",
+            unsafe_allow_html=True,
+        )
         col1, col2 = st.columns(2)
         with col1:
             age = st.number_input("age", min_value=18, max_value=120, value=39, step=1)
-            balance = st.number_input("balance (euros, peut etre negatif)", value=448, step=1)
-            day = st.number_input("day (jour du mois)", min_value=1, max_value=31, value=16, step=1)
-            campaign = st.number_input("campaign", min_value=1, value=2, step=1)
-            pdays = st.number_input("pdays (-1 = jamais contacte)", min_value=-1, value=-1, step=1)
-            previous = st.number_input("previous", min_value=0, value=0, step=1)
             job = st.selectbox("job", CATEGORIES["job"])
-            marital = st.selectbox("marital", CATEGORIES["marital"])
         with col2:
+            marital = st.selectbox("marital", CATEGORIES["marital"])
             education = st.selectbox("education", CATEGORIES["education"])
+
+        st.divider()
+
+        # Section 2 : Profil financier
+        st.markdown(
+            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
+            "💰 Profil financier</div>",
+            unsafe_allow_html=True,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            balance = st.number_input("balance (euros, peut être négatif)", value=448, step=1)
             default = st.selectbox("default", CATEGORIES["default"])
+        with col2:
             housing = st.selectbox("housing", CATEGORIES["housing"])
             loan = st.selectbox("loan", CATEGORIES["loan"])
-            contact = st.selectbox("contact", CATEGORIES["contact"])
+
+        st.divider()
+
+        # Section 3 : Historique & campagne
+        st.markdown(
+            f"<div style='font-weight:600; color:{ACCENT}; margin-bottom:0.8rem; font-size:0.95rem;'>"
+            "📞 Historique & campagne</div>",
+            unsafe_allow_html=True,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            previous = st.number_input("previous (contacts antérieurs)", min_value=0, value=0, step=1)
+            pdays = st.number_input("pdays (-1 = jamais contacté)", min_value=-1, value=-1, step=1)
+            day = st.number_input("day (jour du mois)", min_value=1, max_value=31, value=16, step=1)
+            campaign = st.number_input("campaign (nombre d'appels)", min_value=1, value=2, step=1)
+        with col2:
             month = st.selectbox("month", CATEGORIES["month"])
+            contact = st.selectbox("contact", CATEGORIES["contact"])
             poutcome = st.selectbox("poutcome", CATEGORIES["poutcome"])
 
+        st.write("")  # respiration
         submitted = st.form_submit_button("Prédire", type="primary", width="stretch")
 
     if not submitted:
@@ -335,10 +671,11 @@ def render_predict() -> None:
 
 
 def render_tracking() -> None:
-    st.markdown("## 📊 Suivi du modèle")
-    st.caption(f"Model Registry MLflow — modèle `{MODEL_NAME}`.")
-    if MLFLOW_UI_URL:
-        st.link_button("Ouvrir le Model Registry dans MLflow ↗", f"{MLFLOW_UI_URL}/#/models")
+    _render_page_header(
+        title="Suivi du modèle — Model Registry",
+        description=f"Versions, alias et métriques du modèle `{MODEL_NAME}` dans MLflow.",
+        icon_body=IC_FOLDER,
+    )
 
     try:
         rows = _load_registry_rows()
@@ -388,8 +725,11 @@ def render_tracking() -> None:
 
 
 def render_evaluation() -> None:
-    st.markdown("## ✅ Évaluation & porte qualité")
-    st.caption(f"Seuils : roc_auc >= {EVAL_ROC_AUC_MIN}  |  f1_score >= {EVAL_F1_MIN}")
+    _render_page_header(
+        title="Évaluation — Porte qualité",
+        description=f"Évalue le modèle avec seuils : roc_auc ≥ {EVAL_ROC_AUC_MIN} | f1 ≥ {EVAL_F1_MIN}.",
+        icon_body=IC_SHIELD,
+    )
 
     try:
         eval_rows = _load_registry_rows()
@@ -447,8 +787,11 @@ def render_evaluation() -> None:
 
 
 def render_history() -> None:
-    st.markdown("## 🗂️ Journal des prévisions")
-    st.caption("Historique des prédictions enregistrées en base, et saisie du feedback réel.")
+    _render_page_header(
+        title="Journal des prévisions — Historique & feedback",
+        description="Historique des prédictions en base et saisie du feedback (vérité terrain).",
+        icon_body=IC_PACKAGE,
+    )
 
     try:
         resp = httpx.get(f"{api_url}/predictions", params={"limit": 100}, timeout=10.0)
@@ -519,7 +862,7 @@ with st.sidebar:
         icons=["house", "bullseye", "diagram-3", "clipboard-check", "table"],
         default_index=0,
         styles={
-            "container": {"padding": "0", "background-color": "transparent"},
+            "container": {"padding": "0!important", "background-color": "#FFFFFF"},
             "icon": {"color": ACCENT, "font-size": "1rem"},
             "nav-link": {
                 "font-size": "0.92rem",
@@ -538,8 +881,16 @@ with st.sidebar:
     )
 
     st.divider()
-    st.markdown("##### 🔗 Ressources")
-    st.link_button("🐙 Code source — GitHub", GITHUB_URL, width="stretch")
+    st.markdown(
+        "<div style='font-size:0.72rem; letter-spacing:0.09em; color:#9CA3AF;"
+        " font-weight:700; margin:0.2rem 0 0.5rem 0;'>🔗 RESSOURCES</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<a class='sb-link' href='{GITHUB_URL}' target='_blank'>"
+        f"{GITHUB_SVG} Code source — GitHub</a>",
+        unsafe_allow_html=True,
+    )
     if API_PUBLIC_URL:
         st.link_button("📘 API — Swagger", f"{API_PUBLIC_URL}/docs", width="stretch")
         st.link_button("📕 API — ReDoc", f"{API_PUBLIC_URL}/redoc", width="stretch")
@@ -549,11 +900,8 @@ with st.sidebar:
         st.link_button("🌀 Airflow — Orchestration", AIRFLOW_UI_URL, width="stretch")
 
     st.markdown(
-        f"""
-        <div style="text-align:center; margin-top:1.4rem; color:#9CA3AF; font-size:0.78rem;">
-          Réalisé par <b style="color:#374151;">{AUTHOR}</b><br>ESGI · IABD — Fil rouge MLOps
-        </div>
-        """,
+        "<div style='text-align:center; margin-top:0.8rem; color:#9CA3AF; font-size:0.72rem;'>"
+        "© 2026 Bank Marketing MLOps</div>",
         unsafe_allow_html=True,
     )
 

@@ -87,7 +87,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             model = _load_model_fallback()
             logger.info("Modele charge depuis fichier local")
         except FileNotFoundError:
-            logger.warning("Modele local inexistant : l'API demarre sans modele (en attente du DAG training)")
+            logger.warning(
+                "Modele local inexistant : l'API demarre sans modele (en attente du DAG training)"
+            )
             model = None
             model_source = "unavailable"
 

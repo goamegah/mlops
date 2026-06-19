@@ -144,12 +144,18 @@ services:
       # (pas MLflow) -> "Connection refused", la tache retente 4 min puis echoue.
       # MLflow est joignable par son nom de service sur le reseau Docker.
       MLFLOW_TRACKING_URI: http://mlflow:5000
+      # Idem pour le DAG batch_prediction : il appelle l'API FastAPI. Le defaut
+      # config.py (127.0.0.1:8000) viserait le conteneur Airflow ; on pointe vers
+      # le service Docker `api`.
+      API_URL: http://api:8000
       # Tolere une tache longue (entrainement Optuna) sans tuer le webserver :
       # en standalone (SequentialExecutor + SQLite), une tache qui bloque le
       # process fait expirer le moniteur gunicorn (defaut 120s) -> UI coupee.
       AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "600"
     depends_on:
       mlflow:
+        condition: service_started
+      api:
         condition: service_started
     # EXPOSE pour la demo : l'UI Airflow est protegee par login (user admin +
     # mot de passe genere), l'exposition est donc acceptable. Ouvrir le port 8080

@@ -17,14 +17,15 @@ services:
       MLFLOW_BACKEND_STORE_URI: sqlite:////mlflow/mlflow.db
       MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
       MLFLOW_DISABLE_ENV_MANAGER_CONDA_WARNING: "true"
+      # CORS configuration pour accès public (à adapter selon l'IP réelle)
+      MLFLOW_SERVER_CORS_ALLOWED_ORIGINS: "http://88.96.57.10:5000"
+      MLFLOW_SERVER_ALLOWED_HOSTS: "88.96.57.10"
     command: >
       mlflow server
       --host 0.0.0.0 --port 5000
       --backend-store-uri sqlite:////mlflow/mlflow.db
       --artifacts-destination /mlflow/artifacts
       --serve-artifacts
-      --allowed-hosts "*"
-      --dev
     # EXPOSE PUBLIQUEMENT pour la demo (le prof consulte l'UI MLflow depuis son
     # navigateur). ATTENTION : MLflow n'a AUCUNE authentification -> a re-securiser
     # apres la demo en remettant "127.0.0.1:5000:5000" (loopback + tunnel SSH).

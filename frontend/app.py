@@ -1,4 +1,6 @@
-"""Frontend Streamlit premium V2 finale — Bank Marketing MLOps.
+"""Frontend Streamlit premium V3 compacte — Bank Marketing MLOps.
+
+Version V3 : plus compacte, plus dense et plus robuste côté métriques MLflow.
 
 Pages incluses :
 - Accueil : vision produit, KPIs, pipeline et santé des services.
@@ -162,8 +164,8 @@ def inject_css() -> None:
             --muted: {MUTED};
             --border: {BORDER};
             --card: {CARD};
-            --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
-            --shadow-md: 0 18px 42px rgba(15, 23, 42, 0.10);
+            --shadow-sm: 0 8px 22px rgba(15, 23, 42, 0.055);
+            --shadow-md: 0 16px 36px rgba(15, 23, 42, 0.10);
             --radius: 20px;
           }}
 
@@ -180,7 +182,7 @@ def inject_css() -> None:
           }}
           .block-container {{
             max-width: 1260px;
-            padding: .9rem 1.45rem 1.8rem 1.45rem;
+            padding: .65rem 1.35rem 1.4rem 1.35rem;
           }}
           h1, h2, h3, h4 {{ color: var(--slate); letter-spacing: -0.025em; }}
           hr {{ border: none !important; border-top: 1px solid #EEF0F6 !important; margin: 1.35rem 0 !important; }}
@@ -191,26 +193,26 @@ def inject_css() -> None:
             border-right: 1px solid #EEF0F6;
             box-shadow: 12px 0 28px rgba(15, 23, 42, 0.035);
           }}
-          [data-testid="stSidebar"] > div:first-child {{ padding-top: 1.2rem; }}
+          [data-testid="stSidebar"] > div:first-child {{ padding-top: .95rem; }}
           .brand-card {{
             margin: .1rem .1rem .8rem .1rem;
-            padding: 1rem .9rem;
-            border-radius: 22px;
+            padding: .82rem .82rem;
+            border-radius: 20px;
             background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
             border: 1px solid #EEF0F6;
             box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055);
             text-align: center;
           }}
           .brand-icon {{
-            width: 52px; height: 52px; margin: 0 auto .6rem auto;
-            border-radius: 18px;
+            width: 46px; height: 46px; margin: 0 auto .48rem auto;
+            border-radius: 14px;
             display: grid; place-items: center;
             color: var(--primary);
             background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%);
             border: 1px solid #E0E7FF;
           }}
-          .brand-title {{ font-weight: 850; font-size: 1.05rem; color: var(--slate); }}
-          .brand-subtitle {{ font-size: .76rem; color: var(--muted); margin-top: .15rem; }}
+          .brand-title {{ font-weight: 850; font-size: 1rem; color: var(--slate); }}
+          .brand-subtitle {{ font-size: .73rem; color: var(--muted); margin-top: .12rem; }}
           .sidebar-section-title {{
             font-size: .68rem;
             color: #9CA3AF;
@@ -222,10 +224,10 @@ def inject_css() -> None:
           .sidebar-link {{
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: .5rem;
+            justify-content: flex-start;
+            gap: .55rem;
             width: 100%;
-            padding: .62rem .75rem;
+            padding: .55rem .68rem;
             border-radius: 13px;
             background: #FFFFFF;
             border: 1px solid #E5E7EB;
@@ -243,14 +245,14 @@ def inject_css() -> None:
             box-shadow: 0 10px 24px rgba(79,70,229,.12);
           }}
           .mini-profile {{
-            margin-top: 1.1rem;
-            padding: .95rem;
-            border-radius: 18px;
+            margin-top: .85rem;
+            padding: .82rem;
+            border-radius: 14px;
             background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
             border: 1px solid #EEF0F6;
           }}
           .mini-avatar {{
-            width: 39px; height: 39px; border-radius: 14px;
+            width: 35px; height: 35px; border-radius: 14px;
             background: linear-gradient(135deg, var(--primary), var(--purple));
             color: white;
             display: grid; place-items: center;
@@ -279,7 +281,7 @@ def inject_css() -> None:
             border: 1px solid transparent !important;
             background: linear-gradient(135deg, var(--primary), var(--purple)) !important;
             color: white !important;
-            min-height: 2.65rem;
+            min-height: 2.35rem;
             box-shadow: 0 10px 24px rgba(79,70,229,.20);
             transition: all .18s ease !important;
           }}
@@ -294,7 +296,7 @@ def inject_css() -> None:
             background: #FFFFFF !important;
             color: #374151 !important;
             box-shadow: 0 8px 20px rgba(15,23,42,.045) !important;
-            min-height: 2.45rem;
+            min-height: 2.35rem;
           }}
           [data-testid="stLinkButton"] a:hover {{
             color: var(--primary) !important;
@@ -314,10 +316,10 @@ def inject_css() -> None:
             border-radius: 22px;
             background: rgba(255,255,255,.92);
             box-shadow: var(--shadow-sm);
-            padding: 1.15rem 1.25rem 1.35rem 1.25rem;
+            padding: 1rem 1.1rem 1.15rem 1.1rem;
           }}
           [data-testid="stDataFrame"] {{
-            border-radius: 18px;
+            border-radius: 14px;
             overflow: hidden;
             border: 1px solid #E8EBF3;
             box-shadow: var(--shadow-sm);
@@ -327,9 +329,9 @@ def inject_css() -> None:
           .premium-hero {{
             position: relative;
             overflow: hidden;
-            min-height: 166px;
-            border-radius: 26px;
-            padding: 2.05rem 2.25rem;
+            min-height: 142px;
+            border-radius: 24px;
+            padding: 1.55rem 2rem;
             color: #fff;
             background:
               radial-gradient(circle at 78% 28%, rgba(255,255,255,.22), transparent 20%),
@@ -337,7 +339,7 @@ def inject_css() -> None:
               linear-gradient(135deg, #312E81 0%, #4F46E5 45%, #7C3AED 100%);
             box-shadow: 0 24px 58px rgba(79,70,229,.25);
             border: 1px solid rgba(255,255,255,.22);
-            margin-bottom: 1.05rem;
+            margin-bottom: .65rem;
           }}
           .premium-hero::before {{
             content: "";
@@ -354,50 +356,50 @@ def inject_css() -> None:
             align-items: center;
             gap: .45rem;
             font-weight: 800;
-            font-size: .78rem;
+            font-size: .68rem;
             letter-spacing: .08em;
             text-transform: uppercase;
             background: rgba(255,255,255,.16);
             border: 1px solid rgba(255,255,255,.18);
             border-radius: 999px;
-            padding: .4rem .75rem;
-            margin-bottom: .85rem;
+            padding: .35rem .66rem;
+            margin-bottom: .65rem;
           }}
           .hero-title {{ font-size: clamp(1.65rem, 2.8vw, 2.35rem); line-height: 1.05; font-weight: 900; letter-spacing: -.045em; }}
-          .hero-subtitle {{ margin-top: .75rem; font-size: .96rem; line-height: 1.55; color: rgba(255,255,255,.88); }}
-          .hero-visual {{ position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); opacity: .98; z-index: 1; }}
+          .hero-subtitle {{ margin-top: .55rem; font-size: .84rem; line-height: 1.55; color: rgba(255,255,255,.88); }}
+          .hero-visual {{ position: absolute; right: 1.55rem; top: 50%; transform: translateY(-50%); opacity: .98; z-index: 1; }}
 
           .page-header {{
             border-radius: 24px;
-            padding: 1.35rem 1.45rem;
+            padding: 1.05rem 1.2rem;
             background: linear-gradient(135deg, #FFFFFF 0%, #F7F8FF 55%, #EEF2FF 100%);
             border: 1px solid #E8EBF3;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 1.05rem;
+            margin-bottom: .65rem;
           }}
           .page-header-inner {{ display: flex; gap: 1rem; align-items: flex-start; }}
           .page-icon {{
-            min-width: 54px; width: 54px; height: 54px; border-radius: 16px;
+            min-width: 48px; width: 48px; height: 48px; border-radius: 14px;
             display: grid; place-items: center;
             color: var(--primary);
             background: #FFFFFF;
             border: 1px solid #E0E7FF;
             box-shadow: 0 10px 20px rgba(79,70,229,.12);
           }}
-          .page-title {{ color: var(--slate); font-size: 1.38rem; line-height: 1.2; font-weight: 900; letter-spacing: -.025em; }}
-          .page-desc {{ margin-top: .35rem; color: var(--muted); font-size: .94rem; line-height: 1.55; }}
+          .page-title {{ color: var(--slate); font-size: 1.25rem; line-height: 1.2; font-weight: 900; letter-spacing: -.025em; }}
+          .page-desc {{ margin-top: .28rem; color: var(--muted); font-size: .88rem; line-height: 1.55; }}
 
-          .grid-4 {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; margin: .8rem 0 1rem 0; }}
-          .grid-3 {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; margin: .8rem 0 1rem 0; }}
-          .grid-2-1 {{ display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin: .8rem 0 1rem 0; align-items: stretch; }}
-          .grid-2 {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin: .8rem 0 1rem 0; }}
+          .grid-4 {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .7rem; margin: .65rem 0 .82rem 0; }}
+          .grid-3 {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin: .65rem 0 .82rem 0; }}
+          .grid-2-1 {{ display: grid; grid-template-columns: 2fr 1fr; gap: .68rem; margin: .65rem 0 .82rem 0; align-items: stretch; }}
+          .grid-2 {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin: .65rem 0 .82rem 0; }}
 
           .card {{
             background: rgba(255,255,255,.94);
             border: 1px solid #E8EBF3;
             border-radius: 22px;
             box-shadow: var(--shadow-sm);
-            padding: 1.1rem 1.2rem;
+            padding: .95rem 1.05rem;
           }}
           .card-title {{
             display: flex;
@@ -405,45 +407,45 @@ def inject_css() -> None:
             gap: .55rem;
             color: var(--slate);
             font-weight: 900;
-            font-size: 1.02rem;
+            font-size: .98rem;
             letter-spacing: -.015em;
-            margin-bottom: .75rem;
+            margin-bottom: .58rem;
           }}
-          .card-text {{ color: #4B5563; font-size: .92rem; line-height: 1.68; }}
+          .card-text {{ color: #4B5563; font-size: .88rem; line-height: 1.62; }}
           .metric-card {{
             position: relative;
             overflow: hidden;
-            min-height: 112px;
+            min-height: 94px;
             background: rgba(255,255,255,.95);
             border: 1px solid #E8EBF3;
             border-radius: 22px;
             box-shadow: var(--shadow-sm);
-            padding: .95rem 1rem;
+            padding: .82rem .88rem;
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
           }}
           .metric-card:hover {{ transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: #CBD5E1; }}
-          .metric-row {{ display: flex; align-items: center; gap: .85rem; }}
+          .metric-row {{ display: flex; align-items: center; gap: .68rem; }}
           .metric-icon {{
-            min-width: 44px; width: 44px; height: 44px;
-            border-radius: 16px;
+            min-width: 40px; width: 40px; height: 40px;
+            border-radius: 14px;
             display: grid; place-items: center;
           }}
-          .metric-label {{ color: #8A8FA3; font-size: .76rem; font-weight: 800; }}
-          .metric-value {{ margin-top: .18rem; font-size: 1.5rem; font-weight: 950; line-height: 1.05; letter-spacing: -.035em; }}
-          .pill {{ display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .65rem; border-radius: 999px; font-weight: 850; font-size: .72rem; }}
-          .section-title {{ display: flex; align-items: center; gap: .55rem; color: var(--slate); font-size: 1.1rem; font-weight: 950; margin: 1.35rem 0 .75rem 0; letter-spacing: -.025em; }}
+          .metric-label {{ color: #8A8FA3; font-size: .68rem; font-weight: 800; }}
+          .metric-value {{ margin-top: .18rem; font-size: 1.42rem; font-weight: 950; line-height: 1.05; letter-spacing: -.035em; }}
+          .pill {{ display: inline-flex; align-items: center; gap: .35rem; padding: .22rem .58rem; border-radius: 999px; font-weight: 850; font-size: .68rem; }}
+          .section-title {{ display: flex; align-items: center; gap: .55rem; color: var(--slate); font-size: 1.02rem; font-weight: 950; margin: 1rem 0 .55rem 0; letter-spacing: -.025em; }}
           .muted {{ color: var(--muted); }}
 
-          .pipeline-grid {{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .85rem; margin-top: .8rem; }}
+          .pipeline-grid {{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .65rem; margin-top: .55rem; }}
           .pipeline-step {{
             position: relative;
             background: #FFFFFF;
             border: 1px solid #E8EBF3;
-            border-radius: 20px;
-            padding: .9rem .7rem;
+            border-radius: 18px;
+            padding: .72rem .62rem;
             text-align: center;
             box-shadow: var(--shadow-sm);
-            min-height: 122px;
+            min-height: 108px;
             transition: all .18s ease;
           }}
           .pipeline-step:hover {{ transform: translateY(-4px); border-color: #C7D2FE; box-shadow: 0 18px 34px rgba(79,70,229,.13); }}
@@ -451,23 +453,23 @@ def inject_css() -> None:
             content: "";
             position: absolute;
             left: calc(100% + .08rem);
-            top: 56px;
+            top: 50px;
             width: .72rem;
             border-top: 2px dashed #C7D2FE;
             opacity: .95;
           }}
-          .pipeline-num {{ width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; background: #EEF2FF; color: var(--primary); font-weight: 900; margin: 0 auto .55rem auto; font-size: .76rem; }}
-          .pipeline-ico {{ width: 39px; height: 39px; border-radius: 15px; display: grid; place-items: center; margin: 0 auto .62rem auto; }}
-          .pipeline-title {{ font-size: .9rem; font-weight: 900; color: var(--slate); }}
-          .pipeline-sub {{ margin-top: .15rem; font-size: .72rem; color: #8A8FA3; line-height: 1.35; }}
+          .pipeline-num {{ width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: #EEF2FF; color: var(--primary); font-weight: 900; margin: 0 auto .42rem auto; font-size: .68rem; }}
+          .pipeline-ico {{ width: 35px; height: 35px; border-radius: 15px; display: grid; place-items: center; margin: 0 auto .48rem auto; }}
+          .pipeline-title {{ font-size: .84rem; font-weight: 900; color: var(--slate); }}
+          .pipeline-sub {{ margin-top: .15rem; font-size: .68rem; color: #8A8FA3; line-height: 1.35; }}
 
           .service-card {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 76px;
+            min-height: 68px;
             border-radius: 20px;
-            padding: .85rem 1rem;
+            padding: .72rem .88rem;
             border: 1px solid;
             box-shadow: var(--shadow-sm);
           }}
@@ -480,7 +482,7 @@ def inject_css() -> None:
             background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFF 100%);
             border: 1px solid #E0E7FF;
             border-radius: 24px;
-            padding: 1.1rem 1.2rem;
+            padding: .95rem 1.05rem;
             box-shadow: var(--shadow-sm);
             margin-top: 1rem;
           }}
@@ -510,7 +512,7 @@ def inject_css() -> None:
 
 
 def metric_card(label: str, value: str, icon_body: str, color: str, bg: str, pill: str | None = None) -> str:
-    pill_html = f"<div style='margin-top:.85rem'>{pill}</div>" if pill else ""
+    pill_html = f"<div style='margin-top:.48rem'>{pill}</div>" if pill else ""
     return (
         "<div class='metric-card'>"
         "<div class='metric-row'>"
@@ -598,19 +600,38 @@ def registry_rows_cached() -> list[dict[str, Any]]:
     return load_registry_rows()
 
 
-def first_tag(tags: dict[str, Any], *keys: str) -> str:
-    """Retourne le premier tag non vide parmi plusieurs noms possibles.
+def _clean_value(value: Any) -> str:
+    """Normalise une valeur de métrique/tag MLflow pour l'affichage."""
+    if value is None:
+        return ""
+    text = str(value).strip()
+    if not text or text.lower() in {"none", "nan", "null", "-"}:
+        return ""
+    return text
 
-    Utile car les scripts d'entraînement nomment parfois les métriques
-    `f1`, `f1_score`, `test_f1` ou `test_f1_score` selon la version du code.
-    """
+
+def first_tag(tags: dict[str, Any], *keys: str) -> str:
+    """Retourne le premier tag non vide parmi plusieurs noms possibles."""
     for key in keys:
-        value = tags.get(key)
-        if value is None:
-            continue
-        text = str(value).strip()
-        if text and text.lower() not in {"none", "nan", "null", "-"}:
+        text = _clean_value(tags.get(key))
+        if text:
             return text
+    return ""
+
+
+def first_metric(tags: dict[str, Any], metrics: dict[str, Any], *keys: str) -> str:
+    """Retourne une métrique depuis les tags OU les vraies métriques du run MLflow.
+
+    V3 : c'est important, car selon les scripts d'entraînement les métriques
+    sont parfois stockées dans `run.data.metrics` et pas dans les tags de la
+    ModelVersion. C'est typiquement ce qui peut faire apparaître un F1-score
+    comme “Non disponible” dans le dashboard alors qu'il existe dans MLflow.
+    """
+    for source in (tags, metrics):
+        for key in keys:
+            text = _clean_value(source.get(key))
+            if text:
+                return text
     return ""
 
 
@@ -628,6 +649,18 @@ def load_registry_rows() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for v in client.search_model_versions(f"name='{MODEL_NAME}'"):
         tags = dict(v.tags or {})
+        metrics: dict[str, Any] = {}
+
+        # V3 : récupération robuste des métriques directement depuis le run MLflow.
+        # Certains entraînements loggent les métriques dans le run, mais ne les
+        # copient pas en tags sur la ModelVersion. On évite donc les “—” inutiles.
+        run_id = getattr(v, "run_id", None)
+        if run_id:
+            try:
+                metrics = dict(client.get_run(run_id).data.metrics or {})
+            except Exception:
+                metrics = {}
+
         version = int(v.version)
         aliases = ", ".join(sorted(aliases_by_version.get(version, [])))
         rows.append(
@@ -636,9 +669,36 @@ def load_registry_rows() -> list[dict[str, Any]]:
                 "alias": aliases,
                 "model_family": first_tag(tags, "model_family", "family", "estimator", "algorithm"),
                 "search_method": first_tag(tags, "search_method", "search", "tuning_method"),
-                "f1": first_tag(tags, "f1", "f1_score", "test_f1", "test_f1_score", "eval_f1", "validation_f1", "best_f1"),
-                "roc_auc": first_tag(tags, "roc_auc", "roc_auc_score", "test_roc_auc", "test_roc_auc_score", "auc", "test_auc", "eval_roc_auc", "best_roc_auc"),
-                "cv_roc_auc": first_tag(tags, "cv_roc_auc", "mean_cv_roc_auc", "cv_auc"),
+                "f1": first_metric(
+                    tags,
+                    metrics,
+                    "f1",
+                    "f1_score",
+                    "test_f1",
+                    "test_f1_score",
+                    "eval_f1",
+                    "validation_f1",
+                    "val_f1",
+                    "best_f1",
+                    "f1_macro",
+                    "weighted_f1",
+                ),
+                "roc_auc": first_metric(
+                    tags,
+                    metrics,
+                    "roc_auc",
+                    "roc_auc_score",
+                    "test_roc_auc",
+                    "test_roc_auc_score",
+                    "auc",
+                    "test_auc",
+                    "eval_roc_auc",
+                    "validation_roc_auc",
+                    "val_roc_auc",
+                    "best_roc_auc",
+                ),
+                "cv_roc_auc": first_metric(tags, metrics, "cv_roc_auc", "mean_cv_roc_auc", "cv_auc", "mean_auc"),
+                "run_id": run_id or "",
             }
         )
     rows.sort(key=lambda r: r["version"], reverse=True)
@@ -667,7 +727,7 @@ def render_home() -> None:
     prod = current_prod(rows)
 
     hero_visual = (
-        "<svg width='260' height='160' viewBox='0 0 260 160' fill='none'>"
+        "<svg width='230' height='140' viewBox='0 0 260 160' fill='none'>"
         "<rect x='16' y='22' width='160' height='108' rx='18' fill='rgba(255,255,255,.18)' stroke='rgba(255,255,255,.45)'/>"
         "<rect x='35' y='84' width='16' height='30' rx='4' fill='rgba(255,255,255,.72)'/>"
         "<rect x='62' y='64' width='16' height='50' rx='4' fill='rgba(255,255,255,.96)'/>"
@@ -741,7 +801,7 @@ def render_home() -> None:
         "<div class='card' style='height:100%; display:flex; flex-direction:column;'>"
         f"<div class='card-title'><span style='color:{PRIMARY}'>{_svg(IC_USER, 19)}</span>Auteur</div>"
         "<div style='display:flex; align-items:center; gap:.9rem;'>"
-        f"<div style='width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,{PRIMARY},{PURPLE});color:white;display:grid;place-items:center;font-weight:950;font-size:1.25rem;'>{_escape(INITIALS)}</div>"
+        f"<div style='width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,{PRIMARY},{PURPLE});color:white;display:grid;place-items:center;font-weight:950;font-size:1.25rem;'>{_escape(INITIALS)}</div>"
         "<div>"
         f"<div style='font-weight:950;color:{SLATE};font-size:1.05rem;'>{_escape(AUTHOR)}</div>"
         f"<div style='color:{MUTED};font-size:.84rem;margin-top:.15rem;'>{_escape(AUTHOR_SUBTITLE)}</div>"

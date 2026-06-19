@@ -34,6 +34,11 @@ services:
       - "5000:5000"
     volumes:
       - mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   mysql:
     image: mysql:8
@@ -61,7 +66,8 @@ services:
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy
     volumes:
       - models_data:/app/models
     # Le profil "train" evite que ce service one-shot demarre avec `up`.

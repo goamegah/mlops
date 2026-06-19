@@ -224,6 +224,8 @@ class FamilyResult:
         Pipeline reentraine avec les meilleurs hyperparametres.
     test_roc_auc : float
         ROC AUC sur le jeu de test.
+    f1 : float
+        F1-score sur le jeu de test.
     preds : np.ndarray
         Predictions (classes) sur le jeu de test.
     """
@@ -232,6 +234,7 @@ class FamilyResult:
     study: Any
     best_pipeline: Pipeline
     test_roc_auc: float
+    f1: float
     preds: np.ndarray
 
 
@@ -272,12 +275,14 @@ def optimize_family(
     proba = best_pipeline.predict_proba(x_test)[:, 1]
     preds = (proba >= 0.5).astype(int)
     test_roc_auc = float(roc_auc_score(y_test, proba))
+    test_f1 = float(f1_score(y_test, preds))
 
     logger.info(
-        "%s : cv_roc_auc=%.3f  test_roc_auc=%.3f  params=%s",
+        "%s : cv_roc_auc=%.3f  test_roc_auc=%.3f  test_f1=%.3f  params=%s",
         spec.name,
         study.best_value,
         test_roc_auc,
+        test_f1,
         study.best_params,
     )
     return FamilyResult(
@@ -285,6 +290,7 @@ def optimize_family(
         study=study,
         best_pipeline=best_pipeline,
         test_roc_auc=test_roc_auc,
+        f1=test_f1,
         preds=preds,
     )
 
@@ -330,6 +336,7 @@ def log_family_to_mlflow(
         mlflow.log_params(result.study.best_params)
         mlflow.log_metric("cv_roc_auc", result.study.best_value)
         mlflow.log_metric("test_roc_auc", result.test_roc_auc)
+        mlflow.log_metric("test_f1", result.f1)
 
         cm = confusion_matrix(y_test, result.preds)
         fig, ax = plt.subplots(figsize=(5, 5))
@@ -398,7 +405,8 @@ def describe_registered_version(
     description = (
         f"Famille : {spec.name} | sampler : TPE | n_trials : {n_trials} | cv : {cv}\n"
         f"Meilleurs hyperparametres : {result.study.best_params}\n"
-        f"cv_roc_auc={result.study.best_value:.4f} | test_roc_auc={result.test_roc_auc:.4f}"
+        f"cv_roc_auc={result.study.best_value:.4f} | test_roc_auc={result.test_roc_auc:.4f} | "
+        f"test_f1={result.f1:.4f}"
     )
     client.update_model_version(name, str(version), description=description)
 
@@ -409,6 +417,7 @@ def describe_registered_version(
         "cv": str(cv),
         "cv_roc_auc": f"{result.study.best_value:.4f}",
         "test_roc_auc": f"{result.test_roc_auc:.4f}",
+        "test_f1": f"{result.f1:.4f}",
     }
     for key, value in tags.items():
         client.set_model_version_tag(name, str(version), key, value)
@@ -492,15 +501,7 @@ def train_optuna(n_trials: int = 30, cv: int = 5, use_mlflow: bool = True) -> di
     """
     results = optimize(n_trials=n_trials, cv=cv, use_mlflow=use_mlflow)
     best = results[0]
-
-    df = load_data()
-    _, x_test, _, y_test = split(df)
-
-    f1 = float(f1_score(y_test, best.preds))
-    metrics = {
-        "f1": f1,
-        "roc_auc": best.test_roc_auc,
-    }
+    metrics = {"f1": best.f1, "roc_auc": best.test_roc_auc}
     logger.info("train_optuna : f1=%.3f  roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
     return metrics
 

@@ -43,9 +43,13 @@ def task_prepare_data(**context) -> None:
 
 def task_train(**context) -> None:
     # S17-2 : entraine avec Optuna (hyperparameter tuning) et pousse f1 + roc_auc dans XCom pour la tache suivante.
+    # n_trials/cv reduits : Airflow standalone tourne en SequentialExecutor + SQLite ;
+    # une tache trop longue bloque le process et fragilise le webserver. 10 essais x
+    # 3 familles reste une vraie recherche Optuna, en ~1-2 min. Le modele garde un
+    # roc_auc ~0.78-0.80 (passe largement la porte qualite).
     from bank_marketing.train_optuna import train_optuna
 
-    metrics = train_optuna()
+    metrics = train_optuna(n_trials=10, cv=3)
     logger.info("Entrainement Optuna termine : f1=%.3f roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
     context["ti"].xcom_push(key="f1", value=metrics["f1"])
     context["ti"].xcom_push(key="roc_auc", value=metrics["roc_auc"])

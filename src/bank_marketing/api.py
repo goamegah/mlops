@@ -77,13 +77,19 @@ def _load_model_fallback() -> object:
 # S12-3 : charge le modele une seule fois au demarrage (best practice SaaS).
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # Charger le modele : MLflow (prod/staging) > fallback joblib
+    # Charger le modele : MLflow (prod/staging) > fallback joblib > None
     model = _load_model_from_mlflow()
     model_source = "mlflow" if model is not None else "joblib"
 
     if model is None:
-        logger.warning("Fallback sur modele local (joblib)")
-        model = _load_model_fallback()
+        logger.warning("MLflow indisponible, tentative fallback sur modele local")
+        try:
+            model = _load_model_fallback()
+            logger.info("Modele charge depuis fichier local")
+        except FileNotFoundError:
+            logger.warning("Modele local inexistant : l'API demarre sans modele (en attente du DAG training)")
+            model = None
+            model_source = "unavailable"
 
     ml["model"] = model
     ml["model_source"] = model_source

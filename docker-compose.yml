@@ -13,6 +13,10 @@
 services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.13.0
+    environment:
+      MLFLOW_BACKEND_STORE_URI: sqlite:////mlflow/mlflow.db
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
+      MLFLOW_DISABLE_ENV_MANAGER_CONDA_WARNING: "true"
     command: >
       mlflow server
       --host 0.0.0.0 --port 5000
@@ -20,6 +24,7 @@ services:
       --artifacts-destination /mlflow/artifacts
       --serve-artifacts
       --allowed-hosts "*"
+      --dev
     # EXPOSE PUBLIQUEMENT pour la demo (le prof consulte l'UI MLflow depuis son
     # navigateur). ATTENTION : MLflow n'a AUCUNE authentification -> a re-securiser
     # apres la demo en remettant "127.0.0.1:5000:5000" (loopback + tunnel SSH).

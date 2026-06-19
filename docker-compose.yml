@@ -82,6 +82,10 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://bank:bank@mysql:3306/bankmarketing
       MODEL_VERSION: "1"
+      # Charge le modele depuis le registry MLflow (alias @prod/@staging) au lieu
+      # du joblib local. Sans cette variable, config.py vise 127.0.0.1:5000 = le
+      # conteneur api lui-meme -> echec silencieux -> fallback joblib systematique.
+      MLFLOW_TRACKING_URI: http://mlflow:5000
       # MLflow : fail fast si indisponible au startup (ne pas bloquer 3+ min avec retries)
       MLFLOW_HTTP_REQUEST_MAX_RETRIES: "1"
       MLFLOW_HTTP_REQUEST_TIMEOUT: "3"

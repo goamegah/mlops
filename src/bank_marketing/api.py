@@ -6,6 +6,12 @@ Seance 12 - TP FastAPI (+ journal de predictions en base)
       - POST /predict      : inference + journalisation en base (renvoie un id)
       - POST /feedback     : verite terrain rattachee a une prediction
       - GET  /predictions  : journal des dernieres predictions
+
+    Chargement du modele (best practice SaaS) :
+    - Alias MLflow @prod (production model)
+    - Fallback sur @staging si @prod inexistant
+    - Fallback sur fichier joblib local si MLflow indisponible
+
     Lancement : `uvicorn bank_marketing.api:app --reload`  (ou `make api`)
 """
 
@@ -21,7 +27,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from bank_marketing.config import MODEL_DIR
+from bank_marketing.config import MODEL_DIR, MODEL_NAME, MLFLOW_TRACKING_URI
 from bank_marketing.db import init_db, list_predictions, save_feedback, save_prediction
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -30,12 +36,54 @@ logger = logging.getLogger(__name__)
 ml: dict = {}
 
 
-# S12-3 : charge le modele une seule fois au demarrage (pas a chaque requete).
+def _load_model_from_mlflow() -> object | None:
+    """Charge le modele depuis MLflow par alias (@prod, fallback @staging).
+    Retourne None si MLflow est indisponible ou alias inexistant."""
+    try:
+        import mlflow
+
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+
+        # Essayer @prod, puis @staging
+        for alias in ["prod", "staging"]:
+            try:
+                model_uri = f"models:/{MODEL_NAME}@{alias}"
+                model = mlflow.sklearn.load_model(model_uri)
+                logger.info("Modele charge depuis MLflow : %s", model_uri)
+                return model
+            except Exception as e:
+                logger.debug("Alias @%s indisponible : %s", alias, e)
+                continue
+        return None
+    except Exception as e:
+        logger.warning("MLflow indisponible : %s", e)
+        return None
+
+
+def _load_model_fallback() -> object:
+    """Charge le modele depuis le fichier joblib local (fallback)."""
+    model_path = MODEL_DIR / "model.joblib"
+    if not model_path.exists():
+        raise FileNotFoundError(f"Modele non trouve : {model_path}")
+    model = joblib.load(model_path)
+    logger.info("Modele charge depuis fichier (fallback) : %s", model_path)
+    return model
+
+
+# S12-3 : charge le modele une seule fois au demarrage (best practice SaaS).
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    model_path = MODEL_DIR / "model.joblib"
-    ml["model"] = joblib.load(model_path)
-    logger.info("Modele charge depuis %s", model_path)
+    # Charger le modele : MLflow (prod/staging) > fallback joblib
+    model = _load_model_from_mlflow()
+    model_source = "mlflow" if model is not None else "joblib"
+
+    if model is None:
+        logger.warning("Fallback sur modele local (joblib)")
+        model = _load_model_fallback()
+
+    ml["model"] = model
+    ml["model_source"] = model_source
+
     # Journal de predictions : best-effort, l'API demarre meme sans la base.
     try:
         init_db()
@@ -117,6 +165,19 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@app.get("/model-info")
+def model_info() -> dict:
+    """Infos sur le modele charge (source, version, alias)."""
+    model_version = os.environ.get("MODEL_VERSION", "unknown")
+    model_source = ml.get("model_source", "unknown")
+    return {
+        "model_name": MODEL_NAME,
+        "model_source": model_source,  # "mlflow" ou "joblib"
+        "model_version": model_version,
+        "tracking_uri": MLFLOW_TRACKING_URI,
+    }
+
+
 @app.post("/predict", response_model=PredictionOut)
 def predict(features: Features) -> PredictionOut:
     model = ml.get("model")
@@ -154,9 +215,3 @@ def predictions(limit: int = 50) -> list[dict]:
         return list_predictions(limit=limit)
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Journal indisponible : {exc}") from exc
-
-
-@app.get("/model-info")
-def model_info() -> dict:
-    """Version du modele servie (lue depuis la variable d'environnement MODEL_VERSION)."""
-    return {"version": os.environ.get("MODEL_VERSION", "unknown")}

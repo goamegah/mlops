@@ -1,11 +1,11 @@
-"""Frontend Streamlit premium V5 — Bank Marketing MLOps.
+"""Frontend Streamlit premium V6 — Bank Marketing MLOps.
 
-Version V5 : finition finale orientée soutenance.
-- Formulaire de prédiction rééquilibré pour supprimer les grands vides.
-- Seuil métier de priorisation ajouté dans la lecture du score.
-- F1-score manquant renommé en "Non loggé" / "À recalculer" selon le contexte.
-- Artefacts d’évaluation mieux organisés : courbes principales visibles, compléments dans un expander.
-- Historique des prévisions enrichi : filtres, table métier, export CSV.
+Version V6 : polish final orienté soutenance et démonstration.
+- Hero d’accueil plus compact et plus dashboard.
+- Slider du seuil métier harmonisé avec la charte violette.
+- Tableau Prévisions épuré par défaut pour privilégier les colonnes métier.
+- Historique brut conservé dans un expander pour audit.
+- Fallback plus propre pour le modèle servi lorsque l’API renvoie unknown.
 
 Pages incluses :
 - Accueil : vision produit, KPIs, pipeline et santé des services.
@@ -354,9 +354,9 @@ def inject_css() -> None:
           .premium-hero {{
             position: relative;
             overflow: hidden;
-            min-height: 142px;
-            border-radius: 24px;
-            padding: 1.55rem 2rem;
+            min-height: 126px;
+            border-radius: 22px;
+            padding: 1.28rem 1.85rem;
             color: #fff;
             background:
               radial-gradient(circle at 78% 28%, rgba(255,255,255,.22), transparent 20%),
@@ -364,13 +364,13 @@ def inject_css() -> None:
               linear-gradient(135deg, #312E81 0%, #4F46E5 45%, #7C3AED 100%);
             box-shadow: 0 24px 58px rgba(79,70,229,.25);
             border: 1px solid rgba(255,255,255,.22);
-            margin-bottom: .65rem;
+            margin-bottom: .58rem;
           }}
           .premium-hero::before {{
             content: "";
             position: absolute;
             inset: auto -6% -42% 38%;
-            height: 170px;
+            height: 145px;
             background: rgba(255,255,255,.10);
             transform: rotate(-8deg);
             border-radius: 999px;
@@ -387,12 +387,12 @@ def inject_css() -> None:
             background: rgba(255,255,255,.16);
             border: 1px solid rgba(255,255,255,.18);
             border-radius: 999px;
-            padding: .35rem .66rem;
-            margin-bottom: .65rem;
+            padding: .30rem .62rem;
+            margin-bottom: .52rem;
           }}
-          .hero-title {{ font-size: clamp(1.65rem, 2.8vw, 2.35rem); line-height: 1.05; font-weight: 900; letter-spacing: -.045em; }}
-          .hero-subtitle {{ margin-top: .55rem; font-size: .84rem; line-height: 1.55; color: rgba(255,255,255,.88); }}
-          .hero-visual {{ position: absolute; right: 1.55rem; top: 50%; transform: translateY(-50%); opacity: .98; z-index: 1; }}
+          .hero-title {{ font-size: clamp(1.55rem, 2.55vw, 2.16rem); line-height: 1.05; font-weight: 900; letter-spacing: -.045em; }}
+          .hero-subtitle {{ margin-top: .46rem; font-size: .82rem; line-height: 1.55; color: rgba(255,255,255,.88); }}
+          .hero-visual {{ position: absolute; right: 1.35rem; top: 50%; transform: translateY(-50%); opacity: .98; z-index: 1; }}
 
           .page-header {{
             border-radius: 24px;
@@ -515,10 +515,22 @@ def inject_css() -> None:
           .probability-fill {{ height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--purple)); }}
 
 
-          /* V5 polish */
+          /* V6 polish */
           [data-testid="stSlider"] label {{
             font-weight: 850 !important;
             color: var(--slate) !important;
+          }}
+          /* Harmonisation du slider Streamlit/BaseWeb : on force le violet plutôt que le rouge du thème par défaut. */
+          [data-testid="stSlider"] [role="slider"] {{
+            background: linear-gradient(135deg, var(--primary), var(--purple)) !important;
+            border: 3px solid #FFFFFF !important;
+            box-shadow: 0 6px 16px rgba(79,70,229,.28) !important;
+          }}
+          [data-testid="stSlider"] div[data-baseweb="slider"] > div {{
+            background: #E5E7EB !important;
+          }}
+          [data-testid="stSlider"] div[data-baseweb="slider"] > div > div {{
+            background: linear-gradient(90deg, var(--primary), var(--purple)) !important;
           }}
           [data-testid="stCaptionContainer"] {{
             color: #6B7280 !important;
@@ -923,7 +935,7 @@ def render_predict() -> None:
             unsafe_allow_html=True,
         )
 
-        # V5 : répartition 5/5/5 des champs pour supprimer le grand vide visuel
+        # V6 : répartition 5/5/5 des champs pour supprimer le grand vide visuel
         # observé dans la V4 lorsque la colonne "Campagne" était beaucoup plus longue.
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -1004,6 +1016,7 @@ def render_predict() -> None:
     if served in ("?", "unknown", None, ""):
         prod_row = current_prod(safe_registry_rows())
         served = prod_row.get("version", "?") if prod_row else "?"
+    served_display = f"v{served}" if served not in ("?", "unknown", None, "") else "API non exposée"
 
     result_html = (
         "<div class='result-panel'>"
@@ -1012,7 +1025,7 @@ def render_predict() -> None:
         f"{metric_card('Décision modèle', label, IC_TARGET, color, '#ECFDF5' if pred_label == 1 else '#FFF7ED', pill(decision, color, '#ECFDF5' if pred_label == 1 else '#FFF7ED'))}"
         f"{metric_card('Probabilité', f'{proba:.1%}', IC_TREND, PRIMARY, '#EEF2FF')}"
         f"{metric_card('Seuil métier', f'{threshold:.0%}', IC_SHIELD, PURPLE, '#F3E8FF')}"
-        f"{metric_card('Modèle servi', f'v{served}' if served not in ('?', 'unknown') else 'Non exposé', IC_PACKAGE, BLUE, '#E0F2FE')}"
+        f"{metric_card('Modèle servi', served_display, IC_PACKAGE, BLUE, '#E0F2FE')}"
         "</div>"
         f"<div class='probability-bar'><div class='probability-fill' style='width:{min(max(proba, 0), 1) * 100:.1f}%;'></div></div>"
         f"<div class='card-text' style='margin-top:.65rem;'>Prédiction enregistrée en base — id : <code>{_escape(prediction.get('id', ''))}</code></div>"
@@ -1308,15 +1321,16 @@ def render_history() -> None:
         "default": "Défaut paiement",
     }
     work_df = work_df.rename(columns=rename_map)
+    # V6 : vue principale volontairement épurée. Les variables détaillées restent disponibles
+    # dans le journal brut complet juste en dessous.
     preferred_cols = [
         "Date", "Prédiction", "Probabilité", "Résultat réel", "Modèle", "ID court",
-        "Âge", "Métier", "Contact", "Mois", "Solde", "Prêt perso", "Prêt immo",
-        "Jours depuis contact", "Nb appels", "Défaut paiement",
+        "Âge", "Métier", "Contact", "Mois",
     ]
     display_cols = [c for c in preferred_cols if c in work_df.columns]
     visible_df = work_df[display_cols].head(int(row_limit))
     st.caption(f"{len(work_df)} ligne(s) après filtres — {len(visible_df)} affichée(s).")
-    st.dataframe(visible_df, use_container_width=True, hide_index=True, height=360)
+    st.dataframe(visible_df, use_container_width=True, hide_index=True, height=320)
     csv_export = work_df[display_cols].to_csv(index=False).encode("utf-8")
     st.download_button(
         "Télécharger la vue filtrée CSV",
@@ -1327,7 +1341,7 @@ def render_history() -> None:
     )
 
     with st.expander("Voir le journal brut complet"):
-        st.dataframe(df, use_container_width=True, hide_index=True, height=360)
+        st.dataframe(df, use_container_width=True, hide_index=True, height=340)
 
     section_title("Enregistrer un feedback", IC_CHECK, GREEN)
     st.markdown(

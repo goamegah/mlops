@@ -36,32 +36,41 @@ logger = logging.getLogger(__name__)
 ml: dict = {}
 
 
-def _load_model_from_mlflow() -> object | None:
+def _load_model_from_mlflow() -> tuple[object, str, str] | tuple[None, None, None]:
     """Charge le modele depuis MLflow par alias (@prod, fallback @staging).
-    Retourne None si MLflow est indisponible ou alias inexistant.
-    Timeout court pour eviter les blocages au startup."""
+
+    Retourne ``(model, version, alias)`` ou ``(None, None, None)`` si MLflow est
+    indisponible ou si aucun alias n'existe. La version (resolue depuis l'alias)
+    permet a /model-info et au journal de predictions de tracer la version
+    reellement servie, et non une valeur statique."""
     try:
         import mlflow
 
         # Timeout court + pas de retry (deja configure en env vars)
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        client = mlflow.MlflowClient()
 
         # Essayer @prod, puis @staging
         for alias in ["prod", "staging"]:
             try:
-                model_uri = f"models:/{MODEL_NAME}@{alias}"
                 # Timeout court : fail vite si MLflow indisponible
-                model = mlflow.sklearn.load_model(model_uri)
-                logger.info("Modele charge depuis MLflow : %s", model_uri)
-                return model
+                model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}@{alias}")
             except Exception as e:
                 logger.debug("Alias @%s indisponible : %s", alias, e)
                 continue
+            # Modele charge : resoudre la version pointee par l'alias (best-effort,
+            # ne discarde pas un modele deja charge si la resolution echoue).
+            try:
+                version = str(client.get_model_version_by_alias(MODEL_NAME, alias).version)
+            except Exception:
+                version = "unknown"
+            logger.info("Modele charge depuis MLflow : %s v%s (@%s)", MODEL_NAME, version, alias)
+            return model, version, alias
         logger.warning("Aucun alias MLflow (@prod/@staging) disponible")
-        return None
+        return None, None, None
     except Exception as e:
         logger.warning("MLflow indisponible, fallback sur joblib : %s", e)
-        return None
+        return None, None, None
 
 
 def _load_model_fallback() -> object:
@@ -78,13 +87,17 @@ def _load_model_fallback() -> object:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Charger le modele : MLflow (prod/staging) > fallback joblib > None
-    model = _load_model_from_mlflow()
+    model, model_version, model_alias = _load_model_from_mlflow()
     model_source = "mlflow" if model is not None else "joblib"
 
     if model is None:
         logger.warning("MLflow indisponible, tentative fallback sur modele local")
         try:
             model = _load_model_fallback()
+            # Pas de version registry pour un fichier local : on retombe sur la
+            # variable statique MODEL_VERSION (info de deploiement) faute de mieux.
+            model_version = os.environ.get("MODEL_VERSION", "unknown")
+            model_alias = None
             logger.info("Modele charge depuis fichier local")
         except FileNotFoundError:
             logger.warning(
@@ -92,9 +105,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             )
             model = None
             model_source = "unavailable"
+            model_version = None
+            model_alias = None
 
     ml["model"] = model
     ml["model_source"] = model_source
+    ml["model_version"] = model_version
+    ml["model_alias"] = model_alias
 
     # Journal de predictions : best-effort, l'API demarre meme sans la base.
     try:
@@ -179,13 +196,12 @@ def health() -> dict:
 
 @app.get("/model-info")
 def model_info() -> dict:
-    """Infos sur le modele charge (source, version, alias)."""
-    model_version = os.environ.get("MODEL_VERSION", "unknown")
-    model_source = ml.get("model_source", "unknown")
+    """Infos sur le modele charge (source, version reellement servie, alias)."""
     return {
         "model_name": MODEL_NAME,
-        "model_source": model_source,  # "mlflow" ou "joblib"
-        "model_version": model_version,
+        "model_source": ml.get("model_source", "unknown"),  # "mlflow" / "joblib" / "unavailable"
+        "model_version": ml.get("model_version") or "unknown",  # version registry servie
+        "model_alias": ml.get("model_alias"),  # "prod" / "staging" / None (fichier local)
         "tracking_uri": MLFLOW_TRACKING_URI,
     }
 
@@ -198,7 +214,9 @@ def predict(features: Features) -> PredictionOut:
     row = pd.DataFrame([features.model_dump()])
     proba = round(float(model.predict_proba(row)[0, 1]), 4)
     pred = int(proba >= 0.5)
-    model_version = os.environ.get("MODEL_VERSION", "unknown")
+    # Trace la version reellement servie (resolue depuis l'alias MLflow au
+    # demarrage) plutot que la variable statique MODEL_VERSION.
+    model_version = ml.get("model_version") or "unknown"
 
     # Journalisation best-effort : une base indisponible ne casse pas /predict.
     pred_id = ""

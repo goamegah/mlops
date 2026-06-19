@@ -132,7 +132,14 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.airflow
-    command: standalone
+    # Nettoie un eventuel PID webserver perime (residu d'un arret precedent,
+    # persiste dans le volume airflow_home) AVANT de demarrer : sinon gunicorn
+    # croit qu'un master tourne deja -> "No response from gunicorn master" et le
+    # webserver est tue -> UI inaccessible apres chaque recreation. Fix definitif.
+    command:
+      - bash
+      - -c
+      - "rm -f /opt/airflow/*.pid; exec airflow standalone"
     environment:
       # src/ sur le PYTHONPATH -> le DAG importe `bank_marketing`. Comme src est
       # monte en /opt/airflow/src, config.ROOT vaut /opt/airflow et le DAG ecrit
@@ -152,9 +159,10 @@ services:
       # en standalone (SequentialExecutor + SQLite), une tache qui bloque le
       # process fait expirer le moniteur gunicorn (defaut 120s) -> UI coupee.
       AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "600"
-      # VM contrainte (peu de RAM/CPU) : 4 workers gunicorn (defaut) n'arrivent
-      # pas a demarrer -> "No response from gunicorn master" -> webserver tue.
-      # 1 worker suffit largement pour une demo mono-utilisateur et demarre vite.
+      # Demo mono-utilisateur : 1 worker gunicorn suffit, demarre plus vite et
+      # reduit la coordination master/workers (source de flakiness en standalone).
+      # NB : la VM a 15 Go RAM ; ce n'est PAS un probleme memoire, le vrai fix est
+      # le nettoyage du PID perime (voir `command` ci-dessus).
       AIRFLOW__WEBSERVER__WORKERS: "1"
     depends_on:
       mlflow:

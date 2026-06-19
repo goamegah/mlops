@@ -249,7 +249,7 @@ def log_run_to_mlflow(
     scoring: str,
     register_as: str | None = None,
 ) -> None:
-    """Logger un resultat d'optimisation dans un run MLflow imbrique.
+    """Logger un resultat d'optimisation dans le run MLflow parent (pas imbrique).
 
     Parameters
     ----------
@@ -267,54 +267,53 @@ def log_run_to_mlflow(
     register_as : str, optional
         Si fourni, enregistre le modele dans le Model Registry sous ce nom.
     """
-    with mlflow.start_run(run_name=result.name, nested=True):
-        mlflow.set_tag("model_family", result.name)
-        mlflow.log_param("cv", cv)
-        mlflow.log_param("scoring", scoring)
+    mlflow.set_tag("model_family", result.name)
+    mlflow.log_param("cv", cv)
+    mlflow.log_param("scoring", scoring)
 
-        mlflow.log_params(result.best_params)
-        mlflow.log_metrics(
-            {
-                f"cv_{scoring}": result.cv_score,
-                "f1": result.f1,
-                "roc_auc": result.roc_auc,
-            }
+    mlflow.log_params(result.best_params)
+    mlflow.log_metrics(
+        {
+            f"cv_{scoring}": result.cv_score,
+            "f1": result.f1,
+            "roc_auc": result.roc_auc,
+        }
+    )
+
+    cm = confusion_matrix(y_test, result.preds)
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ConfusionMatrixDisplay(cm).plot(ax=ax)
+    ax.set_title(f"Matrice de confusion : {result.name}")
+    mlflow.log_figure(fig, "confusion_matrix.png")
+    plt.close(fig)
+
+    report_dict = cast(dict, classification_report(y_test, result.preds, output_dict=True))
+    mlflow.log_dict(report_dict, "classification_report.json")
+    report_text = cast(str, classification_report(y_test, result.preds))
+    mlflow.log_text(report_text, "classification_report.txt")
+
+    log_shap_summary(result.best_estimator, x_test, result.name)
+
+    signature = infer_signature(x_test, result.best_estimator.predict(x_test))
+    model_info = mlflow.sklearn.log_model(
+        result.best_estimator,
+        name="model",
+        signature=signature,
+        input_example=x_test.iloc[:5],
+        registered_model_name=register_as,
+        skops_trusted_types=[
+            "xgboost.sklearn.XGBClassifier",
+            "xgboost.core.Booster",
+            "lightgbm.sklearn.LGBMClassifier",
+            "lightgbm.basic.Booster",
+            "collections.OrderedDict",
+        ],
+    )
+
+    if register_as and model_info.registered_model_version:
+        describe_registered_version(
+            register_as, model_info.registered_model_version, result, cv, scoring
         )
-
-        cm = confusion_matrix(y_test, result.preds)
-        fig, ax = plt.subplots(figsize=(5, 5))
-        ConfusionMatrixDisplay(cm).plot(ax=ax)
-        ax.set_title(f"Matrice de confusion : {result.name}")
-        mlflow.log_figure(fig, "confusion_matrix.png")
-        plt.close(fig)
-
-        report_dict = cast(dict, classification_report(y_test, result.preds, output_dict=True))
-        mlflow.log_dict(report_dict, "classification_report.json")
-        report_text = cast(str, classification_report(y_test, result.preds))
-        mlflow.log_text(report_text, "classification_report.txt")
-
-        log_shap_summary(result.best_estimator, x_test, result.name)
-
-        signature = infer_signature(x_test, result.best_estimator.predict(x_test))
-        model_info = mlflow.sklearn.log_model(
-            result.best_estimator,
-            name="model",
-            signature=signature,
-            input_example=x_test.iloc[:5],
-            registered_model_name=register_as,
-            skops_trusted_types=[
-                "xgboost.sklearn.XGBClassifier",
-                "xgboost.core.Booster",
-                "lightgbm.sklearn.LGBMClassifier",
-                "lightgbm.basic.Booster",
-                "collections.OrderedDict",
-            ],
-        )
-
-        if register_as and model_info.registered_model_version:
-            describe_registered_version(
-                register_as, model_info.registered_model_version, result, cv, scoring
-            )
 
 
 def describe_registered_version(

@@ -23,5 +23,5 @@ COPY src/ ./src/
 # Genere data/dataset.csv dans l'image (telechargement UCI au build)
 RUN python -m bank_marketing.prepare_data
 
-# Commande par defaut : entraine la baseline (ecrit models/model.joblib)
-CMD ["python", "-m", "bank_marketing.train"]
+# Commande par defaut : entraine avec GridSearchCV et logue artefacts (matrice, SHAP, etc.)
+CMD ["python", "-m", "bank_marketing.train_models"]

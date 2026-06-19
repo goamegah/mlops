@@ -28,4 +28,5 @@ RUN pip install --no-cache-dir \
     "optuna>=3.0" \
     "xgboost>=2.0" \
     "lightgbm>=4.0" \
-    "mlflow>=2.10"
+    "mlflow>=2.10" \
+    "shap>=0.42"

@@ -38,25 +38,29 @@ ml: dict = {}
 
 def _load_model_from_mlflow() -> object | None:
     """Charge le modele depuis MLflow par alias (@prod, fallback @staging).
-    Retourne None si MLflow est indisponible ou alias inexistant."""
+    Retourne None si MLflow est indisponible ou alias inexistant.
+    Timeout court pour eviter les blocages au startup."""
     try:
         import mlflow
 
+        # Timeout court + pas de retry (deja configure en env vars)
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
         # Essayer @prod, puis @staging
         for alias in ["prod", "staging"]:
             try:
                 model_uri = f"models:/{MODEL_NAME}@{alias}"
+                # Timeout court : fail vite si MLflow indisponible
                 model = mlflow.sklearn.load_model(model_uri)
                 logger.info("Modele charge depuis MLflow : %s", model_uri)
                 return model
             except Exception as e:
                 logger.debug("Alias @%s indisponible : %s", alias, e)
                 continue
+        logger.warning("Aucun alias MLflow (@prod/@staging) disponible")
         return None
     except Exception as e:
-        logger.warning("MLflow indisponible : %s", e)
+        logger.warning("MLflow indisponible, fallback sur joblib : %s", e)
         return None
 
 

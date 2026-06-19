@@ -35,11 +35,11 @@ def task_prepare_data(**context) -> None:
 
 
 def task_train(**context) -> None:
-    # S17-2 : entraine la baseline et pousse le f1 dans XCom pour la tache suivante.
-    from bank_marketing.train import train
+    # S17-2 : entraine avec Optuna (hyperparameter tuning) et pousse le f1 dans XCom pour la tache suivante.
+    from bank_marketing.train_optuna import train_optuna
 
-    metrics = train()
-    logger.info("Entrainement termine : f1=%.3f roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
+    metrics = train_optuna()
+    logger.info("Entrainement Optuna termine : f1=%.3f roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
     context["ti"].xcom_push(key="f1", value=metrics["f1"])
 
 

@@ -69,6 +69,9 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://bank:bank@mysql:3306/bankmarketing
       MODEL_VERSION: "1"
+      # MLflow : fail fast si indisponible au startup (ne pas bloquer 3+ min avec retries)
+      MLFLOW_HTTP_REQUEST_MAX_RETRIES: "1"
+      MLFLOW_HTTP_REQUEST_TIMEOUT: "3"
     depends_on:
       mysql:
         condition: service_healthy

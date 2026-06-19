@@ -302,6 +302,7 @@ def log_run_to_mlflow(
             signature=signature,
             input_example=x_test.iloc[:5],
             registered_model_name=register_as,
+            skops_trusted_types=["xgboost.sklearn.XGBClassifier", "xgboost.core.Booster"],
         )
 
         if register_as and model_info.registered_model_version:

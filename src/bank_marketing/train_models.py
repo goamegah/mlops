@@ -249,7 +249,7 @@ def log_run_to_mlflow(
     scoring: str,
     register_as: str | None = None,
 ) -> None:
-    """Logger un resultat d'optimisation dans un run MLflow imbrique.
+    """Logger un resultat d'optimisation dans le run MLflow parent (pas imbrique).
 
     Parameters
     ----------
@@ -407,6 +407,7 @@ def train_all(
     logger.info("Meilleur modele : %s (roc_auc=%.3f)", best.name, best.roc_auc)
 
     if use_mlflow:
+        setup_experiment()
         with mlflow.start_run(run_name="compare-models"):
             log_dataset(df, context="training")
             mlflow.log_param("cv", cv)

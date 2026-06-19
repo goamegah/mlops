@@ -34,6 +34,7 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
     confusion_matrix,
+    f1_score,
     roc_auc_score,
 )
 from sklearn.pipeline import Pipeline
@@ -460,6 +461,41 @@ def optimize(n_trials: int = 30, cv: int = 5, use_mlflow: bool = True) -> list[F
     logger.info("Modele sauvegarde dans %s", MODEL_DIR / "model.joblib")
 
     return results
+
+
+def train_optuna(n_trials: int = 30, cv: int = 5, use_mlflow: bool = True) -> dict:
+    """Entrainement avec Optuna (interface compatible DAG Airflow).
+
+    Appelle optimize() et retourne un dictionnaire avec les metriques f1 et roc_auc
+    du meilleur modele, dans le meme format que train.train().
+
+    Parameters
+    ----------
+    n_trials : int, optional
+        Nombre d'essais Optuna par famille, par defaut 30.
+    cv : int, optional
+        Nombre de plis de validation croisee, par defaut 5.
+    use_mlflow : bool, optional
+        Active le suivi MLflow, par defaut True.
+
+    Returns
+    -------
+    dict
+        Metriques du meilleur modele : {"f1": float, "roc_auc": float}
+    """
+    results = optimize(n_trials=n_trials, cv=cv, use_mlflow=use_mlflow)
+    best = results[0]
+
+    df = load_data()
+    _, x_test, _, y_test = split(df)
+
+    f1 = float(f1_score(y_test, best.preds))
+    metrics = {
+        "f1": f1,
+        "roc_auc": best.test_roc_auc,
+    }
+    logger.info("train_optuna : f1=%.3f  roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
+    return metrics
 
 
 def main() -> None:

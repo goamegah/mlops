@@ -16,8 +16,15 @@ from airflow.operators.python import PythonOperator
 
 logger = logging.getLogger(__name__)
 
-# f1 minimal du modele entraine pour que le pipeline soit considere comme reussi.
-QUALITY_THRESHOLD = 0.65
+# Les seuils de la porte qualite (roc_auc ET f1) viennent de bank_marketing.config
+# (EVAL_ROC_AUC_MIN=0.65, EVAL_F1_MIN=0.30) : MEME source que la porte qualite du
+# frontend (bank_marketing.evaluate), pour rester coherent dans tout le projet.
+# Le f1 est volontairement bas (0.30) car le dataset est desequilibre (~12% de
+# positifs) : au seuil 0.5 le modele fait ~0.34. Le roc_auc (robuste au
+# desequilibre) fait ~0.80. Un bon modele passe les deux -> DAG VERT ; une
+# regression sous l'un des seuils bloque -> DAG ROUGE. Importes dans la tache
+# (et non au niveau module) pour ne pas casser le parsing du DAG si le package
+# n'est pas importable au moment du chargement.
 
 default_args = {
     "owner": "data-team",
@@ -35,24 +42,36 @@ def task_prepare_data(**context) -> None:
 
 
 def task_train(**context) -> None:
-    # S17-2 : entraine avec Optuna (hyperparameter tuning) et pousse le f1 dans XCom pour la tache suivante.
+    # S17-2 : entraine avec Optuna (hyperparameter tuning) et pousse f1 + roc_auc dans XCom pour la tache suivante.
     from bank_marketing.train_optuna import train_optuna
 
     metrics = train_optuna()
     logger.info("Entrainement Optuna termine : f1=%.3f roc_auc=%.3f", metrics["f1"], metrics["roc_auc"])
     context["ti"].xcom_push(key="f1", value=metrics["f1"])
+    context["ti"].xcom_push(key="roc_auc", value=metrics["roc_auc"])
 
 
 def task_check_quality(**context) -> None:
-    # S17-3 : porte qualite - echoue (et marque le DAG en echec) si f1 trop bas.
+    # S17-3 : porte qualite - echoue (et marque le DAG en echec) si roc_auc OU f1 passe sous son seuil.
+    # Seuils lus depuis bank_marketing.config (meme source que la porte du frontend).
+    from bank_marketing.config import EVAL_F1_MIN, EVAL_ROC_AUC_MIN
+
+    roc_auc = context["ti"].xcom_pull(task_ids="train", key="roc_auc")
     f1 = context["ti"].xcom_pull(task_ids="train", key="f1")
-    if f1 is None:
-        raise ValueError("Aucun f1 dans XCom : la tache 'train' a-t-elle reussi ?")
-    if f1 < QUALITY_THRESHOLD:
+    if roc_auc is None or f1 is None:
+        raise ValueError("Metriques absentes dans XCom : la tache 'train' a-t-elle reussi ?")
+    if roc_auc < EVAL_ROC_AUC_MIN:
         raise ValueError(
-            f"Qualite insuffisante : f1={f1:.3f} < seuil={QUALITY_THRESHOLD} -> modele rejete."
+            f"Qualite insuffisante : roc_auc={roc_auc:.3f} < seuil={EVAL_ROC_AUC_MIN} -> modele rejete."
         )
-    logger.info("Controle qualite OK : f1=%.3f >= seuil=%.3f", f1, QUALITY_THRESHOLD)
+    if f1 < EVAL_F1_MIN:
+        raise ValueError(
+            f"Qualite insuffisante : f1={f1:.3f} < seuil={EVAL_F1_MIN} -> modele rejete."
+        )
+    logger.info(
+        "Controle qualite OK : roc_auc=%.3f (>=%.2f) et f1=%.3f (>=%.2f)",
+        roc_auc, EVAL_ROC_AUC_MIN, f1, EVAL_F1_MIN,
+    )
 
 
 with DAG(

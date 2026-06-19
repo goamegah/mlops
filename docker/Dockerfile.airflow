@@ -11,6 +11,13 @@
 # `from airflow.operators.python import PythonOperator` (chemin valide en 2.x).
 FROM apache/airflow:2.10.5
 
+# Dependances systeme pour LightGBM (libgomp1) et autres libs ML
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+USER airflow
+
 # Installees comme utilisateur `airflow` (utilisateur par defaut de l'image).
 RUN pip install --no-cache-dir \
     "scikit-learn>=1.4" \

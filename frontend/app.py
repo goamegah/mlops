@@ -1,6 +1,11 @@
-"""Frontend Streamlit premium V3 compacte — Bank Marketing MLOps.
+"""Frontend Streamlit premium V5 — Bank Marketing MLOps.
 
-Version V3 : plus compacte, plus dense et plus robuste côté métriques MLflow.
+Version V5 : finition finale orientée soutenance.
+- Formulaire de prédiction rééquilibré pour supprimer les grands vides.
+- Seuil métier de priorisation ajouté dans la lecture du score.
+- F1-score manquant renommé en "Non loggé" / "À recalculer" selon le contexte.
+- Artefacts d’évaluation mieux organisés : courbes principales visibles, compléments dans un expander.
+- Historique des prévisions enrichi : filtres, table métier, export CSV.
 
 Pages incluses :
 - Accueil : vision produit, KPIs, pipeline et santé des services.
@@ -289,6 +294,26 @@ def inject_css() -> None:
             transform: translateY(-1px);
             box-shadow: 0 16px 32px rgba(79,70,229,.30) !important;
           }}
+          /* V5 : Streamlit applique parfois la couleur primaire du thème aux submit de formulaire.
+             On force ici l'action principale en violet pour éviter le bouton rouge. */
+          [data-testid="stFormSubmitButton"] button,
+          [data-testid="stFormSubmitButton"] button[kind="primary"],
+          [data-testid="stButton"] button[kind="primary"],
+          button[kind="primary"] {{
+            background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%) !important;
+            color: #FFFFFF !important;
+            border: 1px solid transparent !important;
+            border-radius: 13px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 12px 26px rgba(79,70,229,.24) !important;
+          }}
+          [data-testid="stFormSubmitButton"] button:hover,
+          [data-testid="stButton"] button[kind="primary"]:hover,
+          button[kind="primary"]:hover {{
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--purple) 100%) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(79,70,229,.32) !important;
+          }}
           [data-testid="stLinkButton"] a {{
             border-radius: 13px !important;
             font-weight: 750 !important;
@@ -489,6 +514,27 @@ def inject_css() -> None:
           .probability-bar {{ height: 12px; background: #EEF2FF; border-radius: 999px; overflow: hidden; margin-top: .65rem; }}
           .probability-fill {{ height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--purple)); }}
 
+
+          /* V5 polish */
+          [data-testid="stSlider"] label {{
+            font-weight: 850 !important;
+            color: var(--slate) !important;
+          }}
+          [data-testid="stCaptionContainer"] {{
+            color: #6B7280 !important;
+            font-weight: 650;
+          }}
+          .stDownloadButton > button {{
+            background: #FFFFFF !important;
+            color: var(--primary) !important;
+            border: 1px solid #C7D2FE !important;
+            box-shadow: 0 8px 18px rgba(79,70,229,.10) !important;
+          }}
+          .stDownloadButton > button:hover {{
+            background: #EEF2FF !important;
+            transform: translateY(-1px);
+          }}
+
           @media (max-width: 1100px) {{
             .grid-4 {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
             .grid-3 {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
@@ -564,11 +610,12 @@ def info_card(title: str, text: str, icon_body: str, color: str = PRIMARY) -> st
     )
 
 
-def quality_pill(value: str | None, threshold: float) -> str:
+def quality_pill(value: str | None, threshold: float, missing_text: str = "Non loggé") -> str:
+    """Pastille de qualité. V5 : une métrique absente est affichée comme donnée non loggée."""
     try:
         x = float(value)  # type: ignore[arg-type]
     except (TypeError, ValueError):
-        return pill("Non disponible", "#6B7280", "#F3F4F6")
+        return pill(missing_text, "#6B7280", "#F3F4F6")
     if x >= threshold:
         return pill("Bon", GREEN, "#DCFCE7", IC_CHECK)
     if x >= threshold - 0.15:
@@ -576,11 +623,11 @@ def quality_pill(value: str | None, threshold: float) -> str:
     return pill("À améliorer", "#C2410C", "#FFEDD5", IC_ALERT)
 
 
-def fmt_metric(value: str | int | float | None) -> str:
+def fmt_metric(value: str | int | float | None, missing: str = "—") -> str:
     try:
         return f"{float(value):.4f}"
     except (TypeError, ValueError):
-        return "—"
+        return missing
 
 
 # ==============================================================================
@@ -778,11 +825,11 @@ def render_home() -> None:
         ),
         metric_card(
             "F1-score prod",
-            fmt_metric(prod.get("f1") if prod else None),
+            fmt_metric(prod.get("f1") if prod else None, "Non loggé"),
             IC_TARGET,
             ORANGE,
             "#FFF7ED",
-            quality_pill(prod.get("f1") if prod else None, 0.50),
+            quality_pill(prod.get("f1") if prod else None, 0.50, "Non loggé"),
         ),
     ]
     st.markdown(f"<div class='grid-4'>{''.join(cards)}</div>", unsafe_allow_html=True)
@@ -869,32 +916,43 @@ def render_predict() -> None:
     with st.form("predict_form"):
         st.markdown(
             f"<div class='grid-3' style='margin-top:0'>"
-            f"{info_card('Profil client', 'Âge, métier, statut marital et niveau d’éducation.', IC_USER)}"
-            f"{info_card('Situation financière', 'Solde, défaut de paiement, prêt immobilier et prêt personnel.', IC_WALLET, ORANGE)}"
-            f"{info_card('Campagne', 'Canal de contact, mois, historique et résultat précédent.', IC_PHONE, BLUE)}"
+            f"{info_card('Client & risque', 'Profil client et informations de risque de base.', IC_USER)}"
+            f"{info_card('Finance & contact', 'Solde, prêts, canal utilisé et période de contact.', IC_WALLET, ORANGE)}"
+            f"{info_card('Campagne', 'Intensité de campagne, historique et résultat précédent.', IC_PHONE, BLUE)}"
             f"</div>",
             unsafe_allow_html=True,
         )
 
+        # V5 : répartition 5/5/5 des champs pour supprimer le grand vide visuel
+        # observé dans la V4 lorsque la colonne "Campagne" était beaucoup plus longue.
         c1, c2, c3 = st.columns(3)
         with c1:
             age = st.number_input("Âge", min_value=18, max_value=120, value=39, step=1)
             job = st.selectbox("Métier", CATEGORIES["job"])
             marital = st.selectbox("Statut marital", CATEGORIES["marital"])
             education = st.selectbox("Éducation", CATEGORIES["education"])
+            default = st.selectbox("Défaut de paiement", CATEGORIES["default"])
         with c2:
             balance = st.number_input("Solde bancaire", value=448, step=1)
-            default = st.selectbox("Défaut de paiement", CATEGORIES["default"])
             housing = st.selectbox("Prêt immobilier", CATEGORIES["housing"])
             loan = st.selectbox("Prêt personnel", CATEGORIES["loan"])
-        with c3:
             contact = st.selectbox("Canal de contact", CATEGORIES["contact"])
             month = st.selectbox("Mois", CATEGORIES["month"])
+        with c3:
             day = st.number_input("Jour du mois", min_value=1, max_value=31, value=16, step=1)
             campaign = st.number_input("Nombre d’appels campagne", min_value=1, value=2, step=1)
             pdays = st.number_input("Jours depuis dernier contact (-1 = jamais)", min_value=-1, value=-1, step=1)
             previous = st.number_input("Contacts antérieurs", min_value=0, value=0, step=1)
             poutcome = st.selectbox("Résultat campagne précédente", CATEGORIES["poutcome"])
+
+        threshold = st.slider(
+            "Seuil métier de priorisation",
+            min_value=0.01,
+            max_value=0.99,
+            value=0.50,
+            step=0.01,
+            help="Ce seuil ne change pas la prédiction du modèle : il sert à décider à partir de quelle probabilité un prospect devient prioritaire métier.",
+        )
 
         submitted = st.form_submit_button("Lancer la prédiction", type="primary", use_container_width=True)
 
@@ -902,7 +960,7 @@ def render_predict() -> None:
         st.markdown(
             f"<div class='card' style='margin-top:1rem;'><div class='card-title'><span style='color:{PRIMARY}'>{_svg(IC_ALERT)}</span>Lecture du score</div>"
             "<div class='card-text'>Plus la probabilité est élevée, plus le prospect mérite d’être priorisé dans la campagne. "
-            "Le seuil métier peut ensuite être ajusté selon le budget d’appel, le coût commercial et l’objectif de conversion.</div></div>",
+            "Le seuil métier sert à transformer le score en décision opérationnelle selon le budget d’appel, le coût commercial et l’objectif de conversion.</div></div>",
             unsafe_allow_html=True,
         )
         return
@@ -937,20 +995,24 @@ def render_predict() -> None:
     pred_label = int(prediction.get("prediction", 0))
     label = "Souscrit" if pred_label == 1 else "Ne souscrit pas"
     color = GREEN if pred_label == 1 else ORANGE
-    decision = "Prospect prioritaire" if proba >= 0.50 else "Prospect non prioritaire"
+    decision = "Prospect prioritaire" if proba >= threshold else "Prospect non prioritaire"
 
     try:
         served = httpx.get(f"{API_URL}/model-info", timeout=5.0).json().get("version", "?")
     except Exception:
         served = "?"
+    if served in ("?", "unknown", None, ""):
+        prod_row = current_prod(safe_registry_rows())
+        served = prod_row.get("version", "?") if prod_row else "?"
 
     result_html = (
         "<div class='result-panel'>"
         f"<div class='card-title'><span style='color:{color}'>{_svg(IC_TARGET)}</span>Résultat de prédiction</div>"
-        "<div class='grid-3' style='margin:.6rem 0 0 0'>"
+        "<div class='grid-4' style='margin:.6rem 0 0 0'>"
         f"{metric_card('Décision modèle', label, IC_TARGET, color, '#ECFDF5' if pred_label == 1 else '#FFF7ED', pill(decision, color, '#ECFDF5' if pred_label == 1 else '#FFF7ED'))}"
         f"{metric_card('Probabilité', f'{proba:.1%}', IC_TREND, PRIMARY, '#EEF2FF')}"
-        f"{metric_card('Modèle servi', f'v{served}' if served not in ('?', 'unknown') else str(served), IC_PACKAGE, BLUE, '#E0F2FE')}"
+        f"{metric_card('Seuil métier', f'{threshold:.0%}', IC_SHIELD, PURPLE, '#F3E8FF')}"
+        f"{metric_card('Modèle servi', f'v{served}' if served not in ('?', 'unknown') else 'Non exposé', IC_PACKAGE, BLUE, '#E0F2FE')}"
         "</div>"
         f"<div class='probability-bar'><div class='probability-fill' style='width:{min(max(proba, 0), 1) * 100:.1f}%;'></div></div>"
         f"<div class='card-text' style='margin-top:.65rem;'>Prédiction enregistrée en base — id : <code>{_escape(prediction.get('id', ''))}</code></div>"
@@ -991,13 +1053,21 @@ def render_tracking() -> None:
         metric_card("Production", f"v{prod['version']}" if prod else "—", IC_PACKAGE, PRIMARY, "#EEF2FF", pill("Alias prod", PRIMARY, "#EEF2FF") if prod else None),
         metric_card("Versions", str(len(rows)), IC_FOLDER, BLUE, "#E0F2FE"),
         metric_card("ROC AUC prod", fmt_metric(prod.get("roc_auc") if prod else None), IC_TREND, GREEN, "#ECFDF5", quality_pill(prod.get("roc_auc") if prod else None, 0.75)),
-        metric_card("F1-score prod", fmt_metric(prod.get("f1") if prod else None), IC_TARGET, ORANGE, "#FFF7ED", quality_pill(prod.get("f1") if prod else None, 0.50)),
+        metric_card("F1-score prod", fmt_metric(prod.get("f1") if prod else None, "Non loggé"), IC_TARGET, ORANGE, "#FFF7ED", quality_pill(prod.get("f1") if prod else None, 0.50, "Non loggé")),
     ]
     st.markdown(f"<div class='grid-4'>{''.join(cards)}</div>", unsafe_allow_html=True)
 
     section_title("Historique des versions", IC_TABLE)
-    df = pd.DataFrame(rows).replace("", "-")
+    df = pd.DataFrame(rows)
+    if "f1" in df.columns:
+        df["f1"] = df["f1"].apply(lambda x: x if _clean_value(x) else "Non loggé")
+    for col in ["alias", "model_family", "search_method", "roc_auc", "cv_roc_auc", "run_id"]:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: x if _clean_value(x) else "-")
     st.dataframe(df, use_container_width=True, hide_index=True)
+
+    if prod and not _clean_value(prod.get("f1")):
+        st.warning("La version en production n’a pas de F1-score loggé dans MLflow. Lance l’évaluation qualité pour le recalculer, puis loggue cette métrique lors du prochain entraînement.")
 
     section_title("Promouvoir une version", IC_BRANCH)
     st.markdown(
@@ -1072,7 +1142,28 @@ def render_evaluation() -> None:
         st.write("")
         eval_btn = st.button("Évaluer", type="primary", use_container_width=True)
 
+    selected_row = next((r for r in rows if int(r.get("version", -1)) == int(eval_version)), None)
+
     if not eval_btn:
+        # V5 : éviter une page vide avant le clic. On affiche le contexte de la version sélectionnée.
+        section_title("Contexte avant évaluation", IC_SHIELD)
+        current_f1 = fmt_metric(selected_row.get("f1") if selected_row else None, "À recalculer")
+        current_roc = fmt_metric(selected_row.get("roc_auc") if selected_row else None, "À recalculer")
+        context_cards = [
+            metric_card("Version sélectionnée", f"v{eval_version}", IC_PACKAGE, PRIMARY, "#EEF2FF"),
+            metric_card("ROC AUC registry", current_roc, IC_TREND, GREEN, "#ECFDF5"),
+            metric_card("F1 registry", current_f1, IC_TARGET, ORANGE, "#FFF7ED", quality_pill(selected_row.get("f1") if selected_row else None, EVAL_F1_MIN, "À recalculer")),
+            metric_card("Action attendue", "Courbes + décision", IC_TABLE, BLUE, "#E0F2FE"),
+        ]
+        st.markdown(f"<div class='grid-4'>{''.join(context_cards)}</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='card' style='margin-top:.65rem;'>"
+            f"<div class='card-title'><span style='color:{PRIMARY}'>{_svg(IC_CHECK)}</span>Ce que fait l’évaluation</div>"
+            "<div class='card-text'>Elle recharge la version MLflow sélectionnée, calcule les métriques sur le jeu de test, "
+            "applique la porte qualité et affiche les artefacts utiles comme la courbe ROC et la courbe précision-rappel.</div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
         return
 
     with st.spinner("Évaluation du modèle sur le jeu de test..."):
@@ -1107,9 +1198,33 @@ def render_evaluation() -> None:
     images = [(name, art.content) for name, art in result.artifacts.items() if type(art.content).__module__.startswith("PIL")]
     if images:
         section_title("Artefacts d’évaluation", IC_TABLE)
+
+        def _is_primary_artifact(name: str) -> bool:
+            lname = name.lower()
+            return "roc" in lname or "precision_recall" in lname or "precision-recall" in lname
+
+        primary_images = [(n, img) for n, img in images if _is_primary_artifact(n)]
+        other_images = [(n, img) for n, img in images if not _is_primary_artifact(n)]
+
+        if not primary_images:
+            primary_images, other_images = images[:2], images[2:]
+
+        st.markdown(
+            f"<div class='card' style='margin-bottom:.65rem;'>"
+            f"<div class='card-title'><span style='color:{PRIMARY}'>{_svg(IC_TREND)}</span>Courbes principales</div>"
+            "<div class='card-text'>Les courbes principales permettent de juger rapidement la séparation des classes et la performance sur la classe positive.</div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
         acols = st.columns(2)
-        for i, (name, img) in enumerate(images):
+        for i, (name, img) in enumerate(primary_images):
             acols[i % 2].image(img, caption=name, use_container_width=True)
+
+        if other_images:
+            with st.expander("Voir les artefacts complémentaires"):
+                extra_cols = st.columns(2)
+                for i, (name, img) in enumerate(other_images):
+                    extra_cols[i % 2].image(img, caption=name, use_container_width=True)
 
 
 def render_history() -> None:
@@ -1146,7 +1261,73 @@ def render_history() -> None:
     st.markdown(f"<div class='grid-4'>{''.join(cards)}</div>", unsafe_allow_html=True)
 
     section_title("Historique des prédictions", IC_TABLE)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # V5 : tableau orienté métier plutôt que dataframe brut.
+    work_df = df.copy()
+    if "created_at" in work_df.columns:
+        work_df["created_at_sort"] = pd.to_datetime(work_df["created_at"], errors="coerce")
+        work_df = work_df.sort_values("created_at_sort", ascending=False, na_position="last")
+
+    pred_num = pd.to_numeric(work_df.get("prediction", pd.Series(index=work_df.index, dtype=float)), errors="coerce")
+    actual_num = pd.to_numeric(work_df.get("actual", pd.Series(index=work_df.index, dtype=float)), errors="coerce")
+    proba_num = pd.to_numeric(work_df.get("probability", pd.Series(index=work_df.index, dtype=float)), errors="coerce")
+
+    work_df["Prédiction"] = pred_num.map({1: "Souscrit", 0: "Non souscrit"}).fillna("—")
+    work_df["Résultat réel"] = actual_num.map({1: "Souscrit", 0: "Non souscrit"}).fillna("—")
+    work_df["Probabilité"] = proba_num.map(lambda x: f"{x:.1%}" if pd.notna(x) else "—")
+    if "id" in work_df.columns:
+        work_df["ID court"] = work_df["id"].astype(str).str.slice(0, 10) + "…"
+
+    fh1, fh2, fh3 = st.columns([1, 1, 1])
+    with fh1:
+        pred_filter = st.selectbox("Filtrer prédiction", ["Toutes", "Souscrit", "Non souscrit"], key="history_pred_filter")
+    with fh2:
+        feedback_filter = st.selectbox("Filtrer feedback", ["Tous", "Avec feedback", "Sans feedback"], key="history_feedback_filter")
+    with fh3:
+        row_limit = st.selectbox("Lignes affichées", [10, 20, 50, 100], index=1, key="history_limit")
+
+    if pred_filter != "Toutes":
+        work_df = work_df[work_df["Prédiction"] == pred_filter]
+    if feedback_filter == "Avec feedback":
+        work_df = work_df[actual_num.notna()]
+    elif feedback_filter == "Sans feedback":
+        work_df = work_df[actual_num.isna()]
+
+    rename_map = {
+        "created_at": "Date",
+        "model_version": "Modèle",
+        "age": "Âge",
+        "job": "Métier",
+        "contact": "Contact",
+        "month": "Mois",
+        "balance": "Solde",
+        "loan": "Prêt perso",
+        "housing": "Prêt immo",
+        "pdays": "Jours depuis contact",
+        "campaign": "Nb appels",
+        "default": "Défaut paiement",
+    }
+    work_df = work_df.rename(columns=rename_map)
+    preferred_cols = [
+        "Date", "Prédiction", "Probabilité", "Résultat réel", "Modèle", "ID court",
+        "Âge", "Métier", "Contact", "Mois", "Solde", "Prêt perso", "Prêt immo",
+        "Jours depuis contact", "Nb appels", "Défaut paiement",
+    ]
+    display_cols = [c for c in preferred_cols if c in work_df.columns]
+    visible_df = work_df[display_cols].head(int(row_limit))
+    st.caption(f"{len(work_df)} ligne(s) après filtres — {len(visible_df)} affichée(s).")
+    st.dataframe(visible_df, use_container_width=True, hide_index=True, height=360)
+    csv_export = work_df[display_cols].to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Télécharger la vue filtrée CSV",
+        data=csv_export,
+        file_name="predictions_filtrees.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+    with st.expander("Voir le journal brut complet"):
+        st.dataframe(df, use_container_width=True, hide_index=True, height=360)
 
     section_title("Enregistrer un feedback", IC_CHECK, GREEN)
     st.markdown(

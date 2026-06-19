@@ -60,7 +60,7 @@ MLFLOW_UI_URL = os.environ.get("MLFLOW_UI_URL", "").rstrip("/")
 AIRFLOW_UI_URL = os.environ.get("AIRFLOW_UI_URL", "").rstrip("/")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/goamegah/mlops").rstrip("/")
 AUTHOR = os.environ.get("AUTHOR", "Godwin Amegah")
-AUTHOR_SUBTITLE = os.environ.get("AUTHOR_SUBTITLE", "ESGI · IABD — Fil rouge MLOps")
+AUTHOR_SUBTITLE = os.environ.get("AUTHOR_SUBTITLE", "Cloud ML Engineer")
 INITIALS = "".join(part[0] for part in AUTHOR.split()[:2]).upper() or "BM"
 
 # Éviter que l'UI se fige si MLflow est indisponible.

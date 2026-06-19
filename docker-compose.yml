@@ -152,6 +152,10 @@ services:
       # en standalone (SequentialExecutor + SQLite), une tache qui bloque le
       # process fait expirer le moniteur gunicorn (defaut 120s) -> UI coupee.
       AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "600"
+      # VM contrainte (peu de RAM/CPU) : 4 workers gunicorn (defaut) n'arrivent
+      # pas a demarrer -> "No response from gunicorn master" -> webserver tue.
+      # 1 worker suffit largement pour une demo mono-utilisateur et demarre vite.
+      AIRFLOW__WEBSERVER__WORKERS: "1"
     depends_on:
       mlflow:
         condition: service_started

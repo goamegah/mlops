@@ -86,3 +86,6 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+# Layout src/ : le package n'est pas installe, on l'ajoute au sys.path pour pytest
+# (independamment du PYTHONPATH du Makefile, pour que `pytest` seul fonctionne aussi).
+pythonpath = ["src"]

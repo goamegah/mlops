@@ -2,10 +2,9 @@
 #
 # A chaque push / pull request sur main (ou lancement manuel) :
 #   1. quality : porte qualite (lint ruff + format + types mypy) via le Makefile.
-#   2. train   : entraine la baseline et publie models/model.joblib en artefact
+#   2. tests   : suite pytest (donnees S11 + modele S11 + API S15), si quality est vert.
+#   3. train   : entraine la baseline et publie models/model.joblib en artefact
 #                (Continuous Training), uniquement si quality est vert.
-#
-# pytest n'est pas encore branche : les tests viendront des seances S10/S11/S15.
 name: CI
 
 # S18-1 : push + pull request sur main, plus lancement manuel.
@@ -83,3 +82,28 @@ jobs:
         with:
           name: model
           path: models/model.joblib
+
+  # ---------------------------------------------------------------------------
+  # 3. Tests : suite pytest (donnees S11, modele S11, API S15). Hermetique :
+  #    aucun service externe (MLflow/MySQL) requis, voir tests/conftest.py.
+  # ---------------------------------------------------------------------------
+  tests:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    # Ne s'execute QUE si le job quality est vert.
+    needs: quality
+    steps:
+      - name: Checkout du depot
+        uses: actions/checkout@v6
+
+      - name: Installation de uv (avec cache)
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Donnees (requises par les tests donnees/modele)
+        run: make data
+
+      - name: Suite de tests
+        run: make test

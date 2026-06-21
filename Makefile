@@ -179,6 +179,6 @@ type: ## Verifie les types (mypy)
 	$(RUN) --extra dev mypy src
 
 test: ## Lance les tests (pytest)
-	# TODO (S10) : $(RUN) --extra dev pytest
+	$(RUN) --extra dev pytest
 
 check: lint format-check type ## Workflow qualite (lint + format + types)

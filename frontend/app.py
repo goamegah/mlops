@@ -178,7 +178,20 @@ def inject_css() -> None:
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           }}
 
-          #MainMenu, footer, header {{ visibility: hidden; }}
+          /* On masque le menu et le footer, mais PAS tout le <header> : il
+             contient le bouton qui rouvre la sidebar une fois repliee (apres un
+             st.rerun() ou sur ecran etroit). Le cacher entierement rendait le
+             menu lateral impossible a rouvrir. On rend donc le header transparent
+             et on garde son controle d'ouverture de sidebar visible. */
+          #MainMenu, footer {{ visibility: hidden; }}
+          header[data-testid="stHeader"], [data-testid="stHeader"] {{
+            background: transparent !important;
+          }}
+          [data-testid="stSidebarCollapsedControl"],
+          [data-testid="collapsedControl"] {{
+            visibility: visible !important;
+            opacity: 1 !important;
+          }}
           .stApp {{
             background:
               radial-gradient(circle at 18% 8%, rgba(79,70,229,0.10), transparent 26%),

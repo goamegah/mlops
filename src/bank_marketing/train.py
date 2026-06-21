@@ -1,10 +1,15 @@
-"""Entrainement du modele de classification (baseline).
+"""Entrainement du modele de classification (baseline LogisticRegression).
 
 Seance 5 - TP MLflow Tracking
-    Ce script entraine et evalue un modele SANS aucun suivi d'experience.
-    Votre mission : instrumenter cet entrainement avec MLflow (voir les TODO).
-    La baseline fonctionne deja : `python -m bank_marketing.train` doit s'executer
-    tel quel une fois config.py adapte a votre dataset (TP S0).
+    Entraine une baseline (regression logistique) et l'instrumente avec MLflow :
+    parametres, metriques (f1, roc_auc), matrice de confusion en artefact et
+    modele loggue. Le suivi MLflow peut etre desactive (--no-mlflow) pour
+    s'executer sans serveur de tracking (ex. integration continue).
+
+Lancement :
+    python -m bank_marketing.train
+    python -m bank_marketing.train --c 0.5 --max-iter 2000
+    python -m bank_marketing.train --no-mlflow   # sans serveur MLflow
 """
 
 from __future__ import annotations
@@ -12,15 +17,23 @@ from __future__ import annotations
 import argparse
 
 import joblib
+import matplotlib.pyplot as plt
+import mlflow
+import mlflow.sklearn
+from mlflow.models import infer_signature
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    confusion_matrix,
+    f1_score,
+    roc_auc_score,
+)
 from sklearn.pipeline import Pipeline
 
 from bank_marketing.config import MODEL_DIR
 from bank_marketing.data import load_data, split
 from bank_marketing.features import build_preprocessor
-
-# TODO (S5-1) : importer mlflow et mlflow.sklearn
+from bank_marketing.tracking import setup_experiment
 
 
 def build_model(c: float = 1.0, max_iter: int = 1000) -> Pipeline:
@@ -32,12 +45,14 @@ def build_model(c: float = 1.0, max_iter: int = 1000) -> Pipeline:
     )
 
 
-def train(c: float = 1.0, max_iter: int = 1000) -> dict:
+def train(c: float = 1.0, max_iter: int = 1000, use_mlflow: bool = True) -> dict:
     df = load_data()
     x_train, x_test, y_train, y_test = split(df)
 
-    # TODO (S5-2) : configurer l'URI de tracking (mlflow.set_tracking_uri) et l'experience
-    # TODO (S5-3) : ouvrir un run englobant l'entrainement et l'evaluation (with mlflow.start_run())
+    # S5-2 : configuration centralisee du tracking (URI + experience), comme
+    # train_optuna / train_models. Voir bank_marketing.tracking.setup_experiment.
+    if use_mlflow:
+        setup_experiment()
 
     model = build_model(c=c, max_iter=max_iter)
     model.fit(x_train, y_train)
@@ -50,10 +65,31 @@ def train(c: float = 1.0, max_iter: int = 1000) -> dict:
     }
     print(f"f1={metrics['f1']:.3f}  roc_auc={metrics['roc_auc']:.3f}")
 
-    # TODO (S5-4) : logger les parametres (c, max_iter) avec mlflow.log_params
-    # TODO (S5-5) : logger les metriques (f1, roc_auc) avec mlflow.log_metrics
-    # TODO (S5-6) : logger le modele avec mlflow.sklearn.log_model
-    # TODO (S5-7 bonus) : sauvegarder la matrice de confusion en image et la logger en artefact
+    # S5-3 : un run englobe le logging des parametres, metriques, artefacts et modele.
+    if use_mlflow:
+        with mlflow.start_run(run_name="baseline"):
+            mlflow.set_tag("model_family", "logistic_regression")
+            # S5-4 : parametres.
+            mlflow.log_params({"c": c, "max_iter": max_iter})
+            # S5-5 : metriques.
+            mlflow.log_metrics(metrics)
+
+            # S5-7 (bonus) : matrice de confusion sauvegardee comme artefact image.
+            cm = confusion_matrix(y_test, preds)
+            fig, ax = plt.subplots(figsize=(5, 5))
+            ConfusionMatrixDisplay(cm).plot(ax=ax)
+            ax.set_title("Matrice de confusion : baseline")
+            mlflow.log_figure(fig, "confusion_matrix.png")
+            plt.close(fig)
+
+            # S5-6 : modele loggue avec signature et exemple d'entree (rechargeable).
+            signature = infer_signature(x_test, model.predict(x_test))
+            mlflow.sklearn.log_model(
+                model,
+                name="model",
+                signature=signature,
+                input_example=x_test.iloc[:5],
+            )
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_DIR / "model.joblib")
@@ -61,11 +97,17 @@ def train(c: float = 1.0, max_iter: int = 1000) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--c", type=float, default=1.0)
     parser.add_argument("--max-iter", type=int, default=1000)
+    parser.add_argument(
+        "--no-mlflow",
+        dest="use_mlflow",
+        action="store_false",
+        help="Desactive le suivi MLflow (utile sans serveur de tracking, ex. CI)",
+    )
     args = parser.parse_args()
-    train(c=args.c, max_iter=args.max_iter)
+    train(c=args.c, max_iter=args.max_iter, use_mlflow=args.use_mlflow)
 
 
 if __name__ == "__main__":

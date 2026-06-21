@@ -4,11 +4,10 @@ Seance 7 - TP AutoML & SHAP
     Ce module compare trois familles de modeles (Random Forest, XGBoost,
     LightGBM), chacune optimisee par recherche d'hyperparametres en grille
     (GridSearchCV), et persiste la meilleure dans `models/model.joblib`.
-    Completez les TODO (S7-n).
 
 Chaque modele est suivi dans MLflow (un run par modele, imbrique sous un run
 parent ``compare-models``) et le meilleur est enregistre dans le Model
-Registry, avec une description et des tags (TODO S7-5, bonus) et un summary
+Registry, avec une description et des tags et un summary
 plot SHAP loggue comme artefact (`bank_marketing.evaluation.log_shap_summary`, deja
 fourni).
 

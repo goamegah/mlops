@@ -4,15 +4,14 @@ Seance 6 - TP Optuna
     Ce module optimise les hyperparametres de trois familles de modeles
     (Random Forest, XGBoost, LightGBM) avec Optuna (sampler TPE), compare
     leurs performances et persiste le meilleur dans `models/model.joblib`.
-    Completez les TODO (S6-n).
 
 Chaque famille est suivie dans MLflow (un run par famille, imbrique sous un
 run parent) et la meilleure est enregistree dans le Model Registry.
 
 Lancement :
-    python -m mlproject.train_optuna
-    python -m mlproject.train_optuna --n-trials 50 --cv 3
-    python -m mlproject.train_optuna --no-mlflow   # desactive le suivi MLflow
+    python -m bank_marketing.train_optuna
+    python -m bank_marketing.train_optuna --n-trials 50 --cv 3
+    python -m bank_marketing.train_optuna --no-mlflow   # desactive le suivi MLflow
 """
 
 from __future__ import annotations

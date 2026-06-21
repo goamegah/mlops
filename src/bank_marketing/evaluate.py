@@ -1,19 +1,19 @@
-"""Evaluation automatisee et validation du modele (squelette).
+"""Evaluation automatisee et validation du modele.
 
 Seance 11 - TP Tests Donnees & Modele
     `mlflow.models.evaluate` calcule en une passe un ensemble de metriques et
     d'artefacts (matrice de confusion, courbes ROC / precision-rappel) sur un
     jeu d'evaluation. `mlflow.validate_evaluation_results` applique ensuite une
     porte qualite : le modele est rejete (exception) si une metrique passe sous
-    son seuil. Completez les TODO (S11-1, S11-2, S11-3).
+    son seuil.
     Pre-requis : un modele enregistre au Model Registry (Seances 5-6).
 
 Le jeu d'evaluation est logue comme dataset MLflow (tracabilite).
 
 Lancement :
-    python -m mlproject.evaluate                       # derniere version du registry
-    python -m mlproject.evaluate --model-uri models:/classifier/1
-    python -m mlproject.evaluate --no-validate         # evalue sans porte qualite
+    python -m bank_marketing.evaluate                       # derniere version du registry
+    python -m bank_marketing.evaluate --model-uri models:/classifier/1
+    python -m bank_marketing.evaluate --no-validate         # evalue sans porte qualite
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def latest_model_uri() -> str:
-    """Resoudre l'URI de la derniere version enregistree de ``MODEL_NAME`` [FOURNI].
+    """Resoudre l'URI de la derniere version enregistree de ``MODEL_NAME``.
 
     Returns
     -------

@@ -1,9 +1,9 @@
-"""Client de test pour l'API FastAPI du modele (squelette).
+"""Client de test pour l'API FastAPI du modele.
 
 Seance 15 - TP Tests de l'API
     Envoie quelques payloads de test a une instance locale de l'API
     (`make api`) et affiche les reponses de `/health`, `/predict` et
-    `/model-info`. Completez les TODO (S15-1, S15-2).
+    `/model-info`.
 
     Les payloads sont echantillonnes dans votre jeu de donnees, donc valides
     quel que soit votre dataset (les colonnes envoyees sont vos features).
@@ -32,7 +32,7 @@ N_SAMPLES = 3
 
 
 def build_payloads(n: int = N_SAMPLES) -> list[dict]:
-    """Construire n payloads de test a partir du jeu de donnees [FOURNI].
+    """Construire n payloads de test a partir du jeu de donnees.
 
     On retire la colonne cible et on convertit chaque ligne en dict JSON natif.
     """

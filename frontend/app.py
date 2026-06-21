@@ -1010,7 +1010,7 @@ def render_predict() -> None:
     decision = "Prospect prioritaire" if proba >= threshold else "Prospect non prioritaire"
 
     try:
-        served = httpx.get(f"{API_URL}/model-info", timeout=5.0).json().get("version", "?")
+        served = httpx.get(f"{API_URL}/model-info", timeout=5.0).json().get("model_version", "?")
     except Exception:
         served = "?"
     if served in ("?", "unknown", None, ""):

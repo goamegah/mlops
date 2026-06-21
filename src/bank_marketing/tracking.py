@@ -1,13 +1,12 @@
-"""Configuration partagee du suivi MLflow (squelette).
+"""Configuration partagee du suivi MLflow.
 
 Seance 5 - TP MLflow Tracking (suite)
     Centralise la configuration du tracking pour eviter de la dupliquer dans
     chaque script d'entrainement, et ajoute la tracabilite des donnees
-    (dataset lineage). Completez les TODO (S5-8, S5-9).
+    (dataset lineage).
 
-    Une fois ces fonctions implementees, les scripts (train, train_models,
-    train_optuna, evaluate) peuvent appeler `setup_experiment()` au lieu de
-    repeter `set_tracking_uri` + `set_experiment`.
+    Les scripts (train, train_models, train_optuna, evaluate) appellent
+    `setup_experiment()` au lieu de repeter `set_tracking_uri` + `set_experiment`.
 """
 
 from __future__ import annotations
